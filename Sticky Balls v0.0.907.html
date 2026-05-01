@@ -231,7 +231,7 @@
                 <button class="start-menu-btn" onclick="showStartPanel('settings')"><span>Settings</span><span style="margin-left:auto; font-size:1rem; opacity:0.4; font-family:sans-serif;">›</span></button>
             </div>
             <p style="font-size:10px; text-transform:uppercase; letter-spacing:0.35em; color:var(--color-primary); opacity:0.6; text-align:center; padding:12px 0; border-top: 1px solid var(--color-shadow);">
-                &copy; Tacticon Studios 2026 &nbsp;&mdash;&nbsp; v0.0.906
+                &copy; Tacticon Studios 2026 &nbsp;&mdash;&nbsp; v0.0.907
             </p>
         </div>
 
@@ -304,7 +304,7 @@
   </div>
 </div>
 
-<p style="font-size:11px;text-align:center;opacity:0.4;padding:6px 12px;letter-spacing:0.2em;text-transform:uppercase;max-width:100vw;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;flex-shrink:0;">&copy; Tacticon Studios 2026 &mdash; v0.0.906</p>
+<p style="font-size:11px;text-align:center;opacity:0.4;padding:6px 12px;letter-spacing:0.2em;text-transform:uppercase;max-width:100vw;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;flex-shrink:0;">&copy; Tacticon Studios 2026 &mdash; v0.0.907</p>
 
 </div>
 
@@ -352,12 +352,23 @@ function showStartPanel(name, fromPopstate=false) {
 }
 window.addEventListener('popstate', function(e) {
     const ov = document.getElementById('start-overlay');
-    if (ov && !ov.classList.contains('hidden')) showStartPanel('main', true);
+    const gc = document.getElementById('game-container');
+    if (!ov) return;
+    if (!ov.classList.contains('hidden')) {
+        showStartPanel('main', true);
+    } else if (gc && !gc.classList.contains('hidden')) {
+        cancelAnimationFrame(raf);
+        running = false;
+        gc.classList.add('hidden');
+        ov.classList.remove('hidden');
+        showStartPanel('main', true);
+    }
 });
 let sfxEnabled = true;
 function updateVolume(val) { document.getElementById('vol-val').innerText = val + '%'; }
 function toggleSFX() { sfxEnabled = !sfxEnabled; document.getElementById('sfx-toggle').innerText = sfxEnabled ? 'ON' : 'OFF'; }
 function startGame() {
+    history.pushState({ panel: 'game' }, '');
     document.getElementById('start-overlay').classList.add('hidden');
     const gc = document.getElementById('game-container');
     gc.classList.remove('hidden');
