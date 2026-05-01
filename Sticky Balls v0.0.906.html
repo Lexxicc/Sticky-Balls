@@ -231,7 +231,7 @@
                 <button class="start-menu-btn" onclick="showStartPanel('settings')"><span>Settings</span><span style="margin-left:auto; font-size:1rem; opacity:0.4; font-family:sans-serif;">›</span></button>
             </div>
             <p style="font-size:10px; text-transform:uppercase; letter-spacing:0.35em; color:var(--color-primary); opacity:0.6; text-align:center; padding:12px 0; border-top: 1px solid var(--color-shadow);">
-                &copy; Tacticon Studios 2026 &nbsp;&mdash;&nbsp; v0.0.905
+                &copy; Tacticon Studios 2026 &nbsp;&mdash;&nbsp; v0.0.906
             </p>
         </div>
 
@@ -275,7 +275,7 @@
         </div>
     </div>
 
-<div id="game-container" class="hidden" style="display:none;width:100%;height:100%;flex-direction:column;align-items:center;justify-content:center;">
+<div id="game-container" class="hidden" style="width:100%;height:100%;flex-direction:column;align-items:center;justify-content:center;">
 
 <div id="wrap">
   <canvas id="canvas"></canvas>
@@ -304,7 +304,7 @@
   </div>
 </div>
 
-<p style="font-size:11px;text-align:center;opacity:0.4;padding:6px 12px;letter-spacing:0.2em;text-transform:uppercase;max-width:100vw;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;flex-shrink:0;">&copy; Tacticon Studios 2026 &mdash; v0.0.905</p>
+<p style="font-size:11px;text-align:center;opacity:0.4;padding:6px 12px;letter-spacing:0.2em;text-transform:uppercase;max-width:100vw;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;flex-shrink:0;">&copy; Tacticon Studios 2026 &mdash; v0.0.906</p>
 
 </div>
 
@@ -511,7 +511,7 @@ function findOrphans() {
   const queue = [];
   if (grid[0]) {
     for (let c = 0; c < COLS; c++) {
-      if (grid[0][c] >= 0) { connected.add(c); queue.push([0, c]); }
+      if (grid[0][c] >= 0) { connected.add(0 * 100 + c); queue.push([0, c]); }
     }
   }
   while (queue.length) {
@@ -584,7 +584,8 @@ function snap() {
   if (bestR < 0) {
     // fallback: snap to ceiling row 0
     let bd = Infinity;
-    for (let c = 0; c < COLS; c++) {
+    const row0Cols = colsInRow(0);
+    for (let c = 0; c < row0Cols; c++) {
       if (grid[0] && grid[0][c] >= 0) continue;
       const p = bPos(0, c);
       const d = Math.hypot(p.x - ball.x, p.y - ball.y);
@@ -660,14 +661,14 @@ function checkWin() {
 function endGame(won) {
   running = false;
   cancelAnimationFrame(raf);
+  saveScore(score, 'Level ' + level);
   const ov = document.getElementById('overlay');
   ov.innerHTML = `
     <h1 style="color:${won ? '#0af' : '#f33'};text-shadow:0 0 24px ${won ? '#0af' : '#f33'}">${won ? 'CLEARED' : 'GAME OVER'}</h1>
     <div class="sub">Score: ${score} &nbsp;|&nbsp; Level: ${level}</div>
-    <button class="btn" id="startBtn">Play Again</button>
+    <button class="btn" onclick="initGame()">Play Again</button>
   `;
   ov.style.display = 'flex';
-  document.getElementById('startBtn').addEventListener('click', initGame);
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -837,8 +838,8 @@ function drawAimLine() {
       }
       if (hit) break;
     }
-    ctx.lineTo(x, y);
     if (hit) break;
+    ctx.lineTo(x, y);
   }
 
   ctx.stroke();
@@ -910,7 +911,7 @@ function drawShooter() {
   ctx.textAlign = 'center';
   ctx.fillText('NEXT', SHOOT_X + 46, SHOOT_Y - 16);
   ctx.restore();
-  drawBubble(SHOOT_X + 46, SHOOT_Y, ball ? nextCI : nextCI, 0.75, 0.72);
+  drawBubble(SHOOT_X + 46, SHOOT_Y, nextCI, 0.75, 0.72);
 }
 
 function drawParticles() {
@@ -1092,7 +1093,7 @@ canvas.addEventListener('touchend', e => {
 function initGame() {
   score = 0; level = 1; shots = 0; misses = 0;
   ball = null; particles = []; floaters = [];
-  rowOffset = 0;
+  rowOffset = 0; shakeF = 0;
   rowCountdown = rowInterval();
   updateHUD();
   document.getElementById('overlay').style.display = 'none';
