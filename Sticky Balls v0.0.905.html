@@ -143,9 +143,139 @@
       opacity: 0;
       transition: opacity 0.1s;
     }
+
+    /* ─── START MENU — AUTO-COLOUR MAPPING derived from game palette ─── */
+    :root {
+      --color-bg-dark:  #000a14;
+      --color-panel:    #001833;
+      --color-primary:  #00aaff;
+      --color-accent:   #44aaff;
+      --color-glow:     #aaddff;
+      --color-shadow:   #000508;
+    }
+
+    .hidden { display: none !important; }
+
+    .btn-pixel {
+      padding: 4px 12px; text-transform: uppercase; font-weight: bold;
+      border: 4px solid var(--color-primary); background: var(--color-panel);
+      box-shadow: inset -2px -2px 0px var(--color-shadow); cursor: pointer;
+    }
+    .btn-pixel:hover { background: var(--color-primary); color: var(--color-bg-dark); }
+
+    .menu-scroll {
+      background: linear-gradient(180deg, var(--color-bg-dark) 0%, var(--color-panel) 45%, var(--color-panel) 55%, var(--color-bg-dark) 100%);
+      border: 6px solid var(--color-primary);
+      box-shadow: 0 0 6px 2px color-mix(in srgb, var(--color-primary) 55%, transparent),
+                  0 0 28px 4px color-mix(in srgb, var(--color-primary) 28%, transparent),
+                  0 0 70px color-mix(in srgb, var(--color-primary) 12%, transparent),
+                  inset 0 0 40px rgba(0,0,0,0.45);
+      width: 640px; max-width: 92vw; max-height: 92vh;
+      overflow-y: auto; scrollbar-width: none;
+    }
+    .menu-scroll::-webkit-scrollbar { display: none; }
+
+    .start-menu-btn {
+      display: flex; align-items: center; gap: 12px; width: 100%;
+      padding: 14px 24px; font-family: 'VT323', monospace; font-size: 1.45rem;
+      text-transform: uppercase; letter-spacing: 0.07em; color: var(--color-glow);
+      background: transparent; border: none; border-bottom: 2px solid var(--color-shadow);
+      cursor: pointer; text-shadow: 2px 2px 0 var(--color-shadow);
+      text-align: left; transition: background 0.12s, padding-left 0.12s;
+    }
+    .start-menu-btn:hover { background: color-mix(in srgb, var(--color-primary) 10%, transparent); color: #fff; padding-left: 28px; }
+    .start-menu-btn:last-child { border-bottom: none; }
+
+    .start-back-btn {
+      font-family: 'VT323', monospace; font-size: 1.1rem; text-transform: uppercase;
+      padding: 6px 14px; color: var(--color-primary); background: transparent;
+      border: 4px solid var(--color-primary); cursor: pointer; letter-spacing: 0.05em;
+    }
+    .start-back-btn:hover { background: var(--color-primary); color: var(--color-bg-dark); }
+
+    .subpanel-header {
+      display: flex; align-items: center; gap: 16px; padding: 16px;
+      background: var(--color-bg-dark); position: sticky; top: 0; z-index: 10;
+      border-bottom: 6px solid var(--color-primary);
+    }
+    .subpanel-header h2 {
+      font-size: 1.5rem; color: var(--color-glow);
+      font-weight: bold; text-transform: uppercase; font-style: italic;
+    }
+    .subpanel-footer { position: sticky; bottom: 0; height: 6px; background: var(--color-bg-dark); }
   </style>
 </head>
 <body>
+
+    <div id="start-overlay" class="fixed inset-0 z-[200] flex items-center justify-center" style="position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:#000;">
+        <div id="start-main" class="menu-scroll relative z-10">
+            <div class="text-center pt-4 pb-4 px-6" style="border-bottom: 4px solid var(--color-shadow);">
+                <div style="min-height:180px; display:flex; align-items:center; justify-content:center;">
+                    <h1 style="font-family:'VT323',monospace; font-size:clamp(2.5rem,10vw,5rem);
+                                color:var(--color-glow); text-shadow:3px 3px 0 var(--color-shadow);
+                                text-transform:uppercase; letter-spacing:0.12em; line-height:1.1;">
+                        STICKY BALLS
+                    </h1>
+                </div>
+                <div style="display:flex; align-items:center; justify-content:center; gap:12px; margin-top:8px;">
+                    <div style="flex-grow:1; height:1px; background:linear-gradient(to right,transparent,var(--color-primary))"></div>
+                    <span style="font-size:1rem; color:var(--color-primary); text-transform:uppercase; letter-spacing:0.4em;">MATCH &amp; POP</span>
+                    <div style="flex-grow:1; height:1px; background:linear-gradient(to left,transparent,var(--color-primary))"></div>
+                </div>
+            </div>
+            <div style="display:flex; flex-direction:column;">
+                <button class="start-menu-btn" onclick="startGame()"><span>Play</span><span style="margin-left:auto; font-size:1rem; opacity:0.4; font-family:sans-serif;">↵</span></button>
+                <button class="start-menu-btn" onclick="showStartPanel('howtoplay')"><span>How to Play</span><span style="margin-left:auto; font-size:1rem; opacity:0.4; font-family:sans-serif;">›</span></button>
+                <button class="start-menu-btn" onclick="showStartPanel('highscores')"><span>High Scores</span><span style="margin-left:auto; font-size:1rem; opacity:0.4; font-family:sans-serif;">›</span></button>
+                <button class="start-menu-btn" onclick="showStartPanel('patchnotes')"><span>Patch Notes</span><span style="margin-left:auto; font-size:1rem; opacity:0.4; font-family:sans-serif;">›</span></button>
+                <button class="start-menu-btn" onclick="showStartPanel('settings')"><span>Settings</span><span style="margin-left:auto; font-size:1rem; opacity:0.4; font-family:sans-serif;">›</span></button>
+            </div>
+            <p style="font-size:10px; text-transform:uppercase; letter-spacing:0.35em; color:var(--color-primary); opacity:0.6; text-align:center; padding:12px 0; border-top: 1px solid var(--color-shadow);">
+                &copy; Tacticon Studios 2026 &nbsp;&mdash;&nbsp; v0.0.905
+            </p>
+        </div>
+
+        <div id="start-howtoplay" class="menu-scroll hidden relative z-10">
+            <div class="subpanel-header"><button class="start-back-btn" onclick="showStartPanel('main')">← Back</button><h2>How to Play</h2></div>
+            <div class="p-5 text-[12px]"><p style="color:var(--color-primary);opacity:0.5;text-align:center;margin-top:32px">Coming soon.</p></div>
+            <div class="subpanel-footer"></div>
+        </div>
+
+        <div id="start-highscores" class="menu-scroll hidden relative z-10">
+            <div class="subpanel-header"><button class="start-back-btn" onclick="showStartPanel('main')">← Back</button><h2>High Scores</h2></div>
+            <div class="p-5" id="highscore-list"><p style="text-align:center;color:var(--color-primary);opacity:0.5;font-size:0.875rem;margin-top:32px">No scores recorded yet.</p></div>
+            <div class="subpanel-footer"></div>
+        </div>
+
+        <div id="start-patchnotes" class="menu-scroll hidden relative z-10">
+            <div class="subpanel-header"><button class="start-back-btn" onclick="showStartPanel('main')">← Back</button><h2>Patch Notes</h2></div>
+            <div id="patchnotes-list" class="p-5 text-[12px] space-y-5"></div>
+            <div class="subpanel-footer"></div>
+        </div>
+
+        <div id="start-settings" class="menu-scroll hidden relative z-10">
+            <div class="subpanel-header"><button class="start-back-btn" onclick="showStartPanel('main')">← Back</button><h2>Settings</h2></div>
+            <div class="p-6 space-y-6">
+                <div>
+                    <h3 style="color:var(--color-glow);text-transform:uppercase;font-weight:bold;font-size:0.875rem;border-bottom:1px solid var(--color-shadow);padding-bottom:8px;margin-bottom:16px;letter-spacing:0.1em">Audio</h3>
+                    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--color-shadow)">
+                        <span>SFX Volume</span>
+                        <div style="display:flex;align-items:center;gap:12px">
+                            <input type="range" id="vol-slider" min="0" max="100" value="100" oninput="updateVolume(this.value)" style="accent-color:var(--color-primary);width:120px">
+                            <span id="vol-val" style="color:var(--color-glow);width:40px;text-align:right">100%</span>
+                        </div>
+                    </div>
+                    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0">
+                        <span>Sound Effects</span>
+                        <button id="sfx-toggle" onclick="toggleSFX()" class="btn-pixel" style="font-size:0.875rem;padding:4px 16px">ON</button>
+                    </div>
+                </div>
+            </div>
+            <div class="subpanel-footer"></div>
+        </div>
+    </div>
+
+<div id="game-container" class="hidden" style="display:none;width:100%;height:100%;flex-direction:column;align-items:center;justify-content:center;">
 
 <div id="wrap">
   <canvas id="canvas"></canvas>
@@ -174,10 +304,67 @@
   </div>
 </div>
 
-<p style="font-size:11px;text-align:center;opacity:0.4;padding:6px 12px;letter-spacing:0.2em;text-transform:uppercase;max-width:100vw;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;flex-shrink:0;">&copy; Tacticon Studios 2026 &mdash; v0.0.904</p>
+<p style="font-size:11px;text-align:center;opacity:0.4;padding:6px 12px;letter-spacing:0.2em;text-transform:uppercase;max-width:100vw;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;flex-shrink:0;">&copy; Tacticon Studios 2026 &mdash; v0.0.905</p>
+
+</div>
 
 <script>
 'use strict';
+
+// ─────────────────────────────────────────────────────────────────
+//  START MENU
+// ─────────────────────────────────────────────────────────────────
+const PATCH_NOTES = [];
+const HS_KEY = 'stickyballs_hs';
+
+function saveScore(score, label='') {
+    const scores = getScores();
+    scores.push({ score, label, date: new Date().toLocaleDateString() });
+    scores.sort((a,b)=>b.score-a.score);
+    scores.splice(10);
+    localStorage.setItem(HS_KEY, JSON.stringify(scores));
+}
+function getScores() {
+    try { return JSON.parse(localStorage.getItem(HS_KEY)) || []; } catch { return []; }
+}
+function renderHighScores() {
+    const el = document.getElementById('highscore-list');
+    const scores = getScores();
+    const primary = getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim();
+    const glow    = getComputedStyle(document.documentElement).getPropertyValue('--color-glow').trim();
+    const shadow  = getComputedStyle(document.documentElement).getPropertyValue('--color-shadow').trim();
+    if (!scores.length) { el.innerHTML = `<p style="text-align:center;color:${primary};opacity:0.5;font-size:0.875rem;margin-top:32px">No scores recorded yet.</p>`; return; }
+    el.innerHTML = scores.map((s,i) => `<div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid ${shadow};font-size:0.875rem"><span style="color:${primary};width:24px;text-align:right">${i+1}.</span><span style="flex:1;color:#fff">${s.label||'—'}</span><span style="color:${glow};font-weight:bold">${s.score}</span><span style="color:${primary};opacity:0.5;font-size:0.75rem">${s.date}</span></div>`).join('');
+}
+function renderPatchNotes() {
+    const el = document.getElementById('patchnotes-list');
+    const primary = getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim();
+    const glow    = getComputedStyle(document.documentElement).getPropertyValue('--color-glow').trim();
+    if (!PATCH_NOTES.length) { el.innerHTML = `<p style="text-align:center;color:${primary};opacity:0.5;font-size:0.875rem;margin-top:32px">No patch notes yet.</p>`; return; }
+    el.innerHTML = PATCH_NOTES.map(p => `<div><div style="display:flex;align-items:baseline;gap:12px;margin-bottom:4px"><span style="color:${glow};font-weight:bold">${p.v}</span><span style="color:${primary};opacity:0.6;font-size:10px">${p.date}</span></div><ul style="margin:0;padding:0;list-style:none">${p.notes.map(n=>`<li style="color:#d1d5db">• ${n}</li>`).join('')}</ul></div>`).join('');
+}
+const PANELS = ['main','howtoplay','settings','highscores','patchnotes'];
+function showStartPanel(name, fromPopstate=false) {
+    PANELS.forEach(p => { const el = document.getElementById('start-'+p); if (el) el.classList.toggle('hidden', p !== name); });
+    if (name === 'highscores') renderHighScores();
+    if (name === 'patchnotes') renderPatchNotes();
+    if (!fromPopstate && name !== 'main') history.pushState({ panel: name }, '');
+}
+window.addEventListener('popstate', function(e) {
+    const ov = document.getElementById('start-overlay');
+    if (ov && !ov.classList.contains('hidden')) showStartPanel('main', true);
+});
+let sfxEnabled = true;
+function updateVolume(val) { document.getElementById('vol-val').innerText = val + '%'; }
+function toggleSFX() { sfxEnabled = !sfxEnabled; document.getElementById('sfx-toggle').innerText = sfxEnabled ? 'ON' : 'OFF'; }
+function startGame() {
+    document.getElementById('start-overlay').classList.add('hidden');
+    const gc = document.getElementById('game-container');
+    gc.classList.remove('hidden');
+    gc.style.display = 'flex';
+    initGame();
+}
+
 // ─────────────────────────────────────────────────────────────────
 //  CONFIG
 // ─────────────────────────────────────────────────────────────────
@@ -480,7 +667,7 @@ function endGame(won) {
     <button class="btn" id="startBtn">Play Again</button>
   `;
   ov.style.display = 'flex';
-  document.getElementById('startBtn').addEventListener('click', startGame);
+  document.getElementById('startBtn').addEventListener('click', initGame);
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -841,11 +1028,13 @@ function resizeGame() {
   // Account for footer height + border + a small breathing gap.
   // In landscape the footer is hidden to maximise play area.
   const isLandscape = vw > vh;
-  const footer = document.querySelector('body > p');
-  if (isLandscape) {
-    footer.style.display = 'none';
-  } else {
-    footer.style.display = '';
+  const footer = document.querySelector('#game-container > p');
+  if (footer) {
+    if (isLandscape) {
+      footer.style.display = 'none';
+    } else {
+      footer.style.display = '';
+    }
   }
   const footerH = isLandscape ? 0 : 30; // footer + gap
   const borderH = 4;
@@ -898,9 +1087,9 @@ canvas.addEventListener('touchend', e => {
 }, { passive: false });
 
 // ─────────────────────────────────────────────────────────────────
-//  START
+//  INIT GAME (called from startGame() in start menu)
 // ─────────────────────────────────────────────────────────────────
-function startGame() {
+function initGame() {
   score = 0; level = 1; shots = 0; misses = 0;
   ball = null; particles = []; floaters = [];
   rowOffset = 0;
@@ -912,11 +1101,11 @@ function startGame() {
   nextCI = randomCI();
   running = true;
   cancelAnimationFrame(raf);
+  resizeGame();
   loop();
 }
 
-document.getElementById('startBtn').addEventListener('click', startGame);
-resizeGame();
+document.getElementById('startBtn').addEventListener('click', initGame);
 </script>
 
 </body>
