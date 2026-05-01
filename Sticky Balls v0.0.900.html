@@ -12,15 +12,19 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      min-height: 100vh;
+      height: 100vh;
+      height: 100dvh;
       font-family: 'Courier New', monospace;
       overflow: hidden;
+      overscroll-behavior: none;
+      touch-action: none;
       user-select: none;
     }
     #wrap {
       position: relative;
       border: 2px solid #0af;
       box-shadow: 0 0 12px #0af8, 0 0 40px #0055aa44, inset 0 0 8px #0af2;
+      flex-shrink: 0;
     }
     canvas { display: block; }
 
@@ -139,7 +143,7 @@
 
   <div id="overlay">
     <h1>Sticky Balls</h1>
-    <div class="sub">Match 3 or more to pop &nbsp;•&nbsp; Aim with mouse &nbsp;•&nbsp; Click to shoot</div>
+    <div class="sub" id="instEl">Match 3 or more to pop &nbsp;•&nbsp; Drag to aim &nbsp;•&nbsp; Release to shoot</div>
     <button class="btn" id="startBtn">Start Game</button>
   </div>
 </div>
@@ -783,6 +787,21 @@ function loop() {
 }
 
 // ─────────────────────────────────────────────────────────────────
+//  RESPONSIVE SCALING
+// ─────────────────────────────────────────────────────────────────
+function resizeGame() {
+  const vw = window.innerWidth;
+  const vh = window.innerHeight || document.documentElement.clientHeight;
+  const footerH = 36; // footer + gap
+  const borderH = 4;
+  const scale = Math.min(1, (vw - 4) / W, (vh - footerH - borderH) / H);
+  canvas.style.width  = Math.round(W * scale) + 'px';
+  canvas.style.height = Math.round(H * scale) + 'px';
+}
+window.addEventListener('resize', resizeGame);
+window.addEventListener('orientationchange', () => setTimeout(resizeGame, 120));
+
+// ─────────────────────────────────────────────────────────────────
 //  INPUT
 // ─────────────────────────────────────────────────────────────────
 function setAim(clientX, clientY) {
@@ -796,6 +815,10 @@ function setAim(clientX, clientY) {
 canvas.addEventListener('mousemove', e => { if (running) setAim(e.clientX, e.clientY); });
 canvas.addEventListener('click',     e => { setAim(e.clientX, e.clientY); shoot(); });
 
+canvas.addEventListener('touchstart', e => {
+  e.preventDefault();
+  if (running) setAim(e.touches[0].clientX, e.touches[0].clientY);
+}, { passive: false });
 canvas.addEventListener('touchmove', e => {
   e.preventDefault();
   if (running) setAim(e.touches[0].clientX, e.touches[0].clientY);
@@ -822,6 +845,7 @@ function startGame() {
 }
 
 document.getElementById('startBtn').addEventListener('click', startGame);
+resizeGame();
 </script>
 
 </body>
