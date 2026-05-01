@@ -2,29 +2,827 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <title>Sticky Balls</title>
-  <script src="https://cdn.tailwindcss.com"></script>
   <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      background: #111;
-      color: #fff;
-      font-family: monospace;
+      background: #000;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       min-height: 100vh;
-      margin: 0;
+      font-family: 'Courier New', monospace;
+      overflow: hidden;
+      user-select: none;
+    }
+    #wrap {
+      position: relative;
+      border: 2px solid #0af;
+      box-shadow: 0 0 12px #0af8, 0 0 40px #0055aa44, inset 0 0 8px #0af2;
+    }
+    canvas { display: block; }
+
+    /* ── HUD overlay ── */
+    #hud {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 10px 14px 0;
+      pointer-events: none;
+    }
+    .hud-block {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+    .hud-label {
+      font-size: 9px;
+      letter-spacing: 0.25em;
+      color: #0af;
+      text-transform: uppercase;
+    }
+    .hud-val {
+      font-size: 22px;
+      font-weight: bold;
+      color: #fff;
+      line-height: 1;
+      text-shadow: 0 0 8px #0af;
+    }
+    .hud-block.right { text-align: right; }
+    .hud-block.center { text-align: center; }
+
+    /* ── Overlay screens ── */
+    #overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.88);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+    }
+    #overlay h1 {
+      font-size: 34px;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: #0af;
+      text-shadow: 0 0 24px #0af, 0 0 60px #0055ff;
+    }
+    #overlay .sub {
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      color: #4af;
+      text-transform: uppercase;
+    }
+    .btn {
+      background: transparent;
+      border: 2px solid #0af;
+      color: #0af;
+      padding: 10px 36px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.12s, color 0.12s, box-shadow 0.12s;
+      clip-path: polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%);
+    }
+    .btn:hover {
+      background: #0af;
+      color: #000;
+      box-shadow: 0 0 20px #0af;
+    }
+
+    /* ── combo flash ── */
+    #combo {
+      position: absolute;
+      left: 50%;
+      top: 40%;
+      transform: translateX(-50%);
+      font-size: 28px;
+      font-weight: bold;
+      color: #fff;
+      text-shadow: 0 0 16px #0af, 0 0 40px #0af;
+      letter-spacing: 0.2em;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.1s;
     }
   </style>
 </head>
 <body>
 
-  <h1 class="text-4xl font-bold tracking-widest uppercase mb-4">Sticky Balls</h1>
-  <p class="text-gray-400 text-sm">Coming soon...</p>
+<div id="wrap">
+  <canvas id="canvas"></canvas>
 
-  <p style="font-size:10px;text-align:center;opacity:0.4;padding:8px;letter-spacing:0.3em;text-transform:uppercase;position:fixed;bottom:0;width:100%;">&copy; Tacticon Studios 2026 &mdash; v0.0.900</p>
+  <div id="hud">
+    <div class="hud-block">
+      <span class="hud-label">Score</span>
+      <span class="hud-val" id="scoreEl">0</span>
+    </div>
+    <div class="hud-block center">
+      <span class="hud-label">Level</span>
+      <span class="hud-val" id="levelEl">1</span>
+    </div>
+    <div class="hud-block right">
+      <span class="hud-label">Shots</span>
+      <span class="hud-val" id="shotsEl">0</span>
+    </div>
+  </div>
+
+  <div id="combo"></div>
+
+  <div id="overlay">
+    <h1>Sticky Balls</h1>
+    <div class="sub">Match 3 or more to pop &nbsp;•&nbsp; Aim with mouse &nbsp;•&nbsp; Click to shoot</div>
+    <button class="btn" id="startBtn">Start Game</button>
+  </div>
+</div>
+
+<p style="font-size:10px;text-align:center;opacity:0.4;padding:8px;letter-spacing:0.3em;text-transform:uppercase;">&copy; Tacticon Studios 2026 &mdash; v0.0.900</p>
+
+<script>
+'use strict';
+// ─────────────────────────────────────────────────────────────────
+//  CONFIG
+// ─────────────────────────────────────────────────────────────────
+const R       = 17;
+const DIAM    = R * 2;
+const ROW_H   = Math.round(DIAM * 0.866);
+const COLS    = 13;          // cols per even row
+const INIT_ROWS = 7;
+const SPEED   = 13;
+
+// 6 shades — all in the blue/cyan/white family
+const PALETTE = ['#00aaff','#00eeff','#4466dd','#88ddff','#ffffff','#0033bb'];
+const PAL_GLOW= ['#0af','#0ef','#44f','#8df','#aaf','#04f'];
+
+const W = COLS * DIAM + R + R;          // canvas width
+const H = 580;                           // canvas height
+const SHOOT_X = W / 2;
+const SHOOT_Y = H - 52;
+const DANGER_Y = SHOOT_Y - DIAM * 2;
+
+// ─────────────────────────────────────────────────────────────────
+//  CANVAS
+// ─────────────────────────────────────────────────────────────────
+const canvas = document.getElementById('canvas');
+const ctx    = canvas.getContext('2d');
+canvas.width  = W;
+canvas.height = H;
+
+// ─────────────────────────────────────────────────────────────────
+//  STATE
+// ─────────────────────────────────────────────────────────────────
+let grid        = [];   // grid[row][col] = colorIndex (0–5) | -1
+let ball        = null; // { x, y, vx, vy, ci }
+let nextCI      = 0;
+let aimAngle    = -Math.PI / 2;
+let score       = 0;
+let level       = 1;
+let shots       = 0;
+let misses      = 0;
+let running     = false;
+let raf         = null;
+let particles   = [];
+let floaters    = [];   // detached bubbles falling
+let shakeF      = 0;
+let comboTimer  = 0;
+let bgStars     = [];
+let scanY       = 0;
+let wipeVer     = 'v900';
+
+// ─────────────────────────────────────────────────────────────────
+//  BG STARS
+// ─────────────────────────────────────────────────────────────────
+function initStars() {
+  bgStars = Array.from({length: 80}, () => ({
+    x: Math.random() * W,
+    y: Math.random() * H,
+    r: Math.random() * 1.2 + 0.3,
+    a: Math.random() * 0.5 + 0.1,
+    t: Math.random() * Math.PI * 2,
+    sp: 0.02 + Math.random() * 0.03,
+  }));
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  HEX GRID HELPERS
+// ─────────────────────────────────────────────────────────────────
+function bPos(r, c) {
+  const xOff = (r % 2 === 1) ? R : 0;
+  return { x: R + c * DIAM + xOff, y: R + r * ROW_H };
+}
+
+function colsInRow(r) {
+  return (r % 2 === 0) ? COLS : COLS - 1;
+}
+
+function neighbors(r, c) {
+  const n = [];
+  if (r % 2 === 0) {
+    n.push([r-1,c-1],[r-1,c],[r,c-1],[r,c+1],[r+1,c-1],[r+1,c]);
+  } else {
+    n.push([r-1,c],[r-1,c+1],[r,c-1],[r,c+1],[r+1,c],[r+1,c+1]);
+  }
+  return n.filter(([nr,nc]) => nr >= 0 && nr < grid.length && nc >= 0 && nc < colsInRow(nr));
+}
+
+function initGrid(numRows) {
+  grid = [];
+  for (let r = 0; r < numRows; r++) {
+    const cols = colsInRow(r);
+    const row = [];
+    for (let c = 0; c < COLS; c++) {
+      row.push(c < cols ? Math.floor(Math.random() * PALETTE.length) : -1);
+    }
+    grid.push(row);
+  }
+  // pad with empty rows down to INIT_ROWS+2
+  while (grid.length < INIT_ROWS + 2) {
+    grid.push(Array(COLS).fill(-1));
+  }
+}
+
+function addRow() {
+  const newRow = [];
+  for (let c = 0; c < COLS; c++) {
+    newRow.push(c < colsInRow(0) ? Math.floor(Math.random() * PALETTE.length) : -1);
+  }
+  grid.unshift(newRow);
+}
+
+function randomCI() {
+  const present = new Set();
+  grid.forEach(row => row.forEach(ci => { if (ci >= 0) present.add(ci); }));
+  const pool = present.size ? [...present] : PALETTE.map((_,i)=>i);
+  // cap at 4 colors for playability
+  const limited = pool.slice(0, 4);
+  return limited[Math.floor(Math.random() * limited.length)];
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  MATCH / POP
+// ─────────────────────────────────────────────────────────────────
+function floodMatch(sr, sc, ci) {
+  const visited = new Set();
+  const stack = [[sr, sc]];
+  const found = [];
+  while (stack.length) {
+    const [r, c] = stack.pop();
+    const key = r * 100 + c;
+    if (visited.has(key)) continue;
+    if (!grid[r] || grid[r][c] !== ci) continue;
+    visited.add(key);
+    found.push([r, c]);
+    neighbors(r, c).forEach(p => stack.push(p));
+  }
+  return found;
+}
+
+function findOrphans() {
+  const connected = new Set();
+  const queue = [];
+  if (grid[0]) {
+    for (let c = 0; c < COLS; c++) {
+      if (grid[0][c] >= 0) { connected.add(c); queue.push([0, c]); }
+    }
+  }
+  while (queue.length) {
+    const [r, c] = queue.shift();
+    neighbors(r, c).forEach(([nr, nc]) => {
+      const key = nr * 100 + nc;
+      if (!connected.has(key) && grid[nr] && grid[nr][nc] >= 0) {
+        connected.add(key);
+        queue.push([nr, nc]);
+      }
+    });
+  }
+  const orphans = [];
+  grid.forEach((row, r) => row.forEach((ci, c) => {
+    if (ci >= 0 && !connected.has(r * 100 + c)) orphans.push([r, c]);
+  }));
+  return orphans;
+}
+
+function popCells(cells, asFloaters = false) {
+  cells.forEach(([r, c]) => {
+    const p = bPos(r, c);
+    const ci = grid[r][c];
+    if (asFloaters) {
+      floaters.push({ x: p.x, y: p.y, ci, vy: 1 + Math.random() * 2, vx: (Math.random()-0.5)*2, life: 1 });
+    } else {
+      spawnPop(p.x, p.y, ci);
+    }
+    grid[r][c] = -1;
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  PARTICLES
+// ─────────────────────────────────────────────────────────────────
+function spawnPop(x, y, ci) {
+  for (let i = 0; i < 12; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const spd   = 1.5 + Math.random() * 5;
+    particles.push({
+      x, y,
+      vx: Math.cos(angle) * spd,
+      vy: Math.sin(angle) * spd - 1,
+      ci,
+      life: 1,
+      size: 1.5 + Math.random() * 3.5,
+      rot: Math.random() * Math.PI,
+    });
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  SNAP BALL TO GRID
+// ─────────────────────────────────────────────────────────────────
+function snap() {
+  if (!ball) return;
+  // find nearest empty cell within 2*DIAM
+  let bestR = -1, bestC = -1, bestD = Infinity;
+  const maxR = Math.min(grid.length, Math.ceil((ball.y + DIAM * 2) / ROW_H));
+  for (let r = 0; r < maxR + 1; r++) {
+    if (!grid[r]) grid[r] = Array(COLS).fill(-1);
+    const cols = colsInRow(r);
+    for (let c = 0; c < cols; c++) {
+      if (grid[r][c] >= 0) continue;
+      const p = bPos(r, c);
+      const d = Math.hypot(p.x - ball.x, p.y - ball.y);
+      if (d < bestD && d < DIAM * 1.5) { bestD = d; bestR = r; bestC = c; }
+    }
+  }
+  if (bestR < 0) {
+    // fallback: snap to ceiling row 0
+    let bd = Infinity;
+    for (let c = 0; c < COLS; c++) {
+      if (grid[0] && grid[0][c] >= 0) continue;
+      const p = bPos(0, c);
+      const d = Math.hypot(p.x - ball.x, p.y - ball.y);
+      if (d < bd) { bd = d; bestR = 0; bestC = c; }
+    }
+    if (bestR < 0) { ball = null; return; }
+  }
+
+  while (grid.length <= bestR) grid.push(Array(COLS).fill(-1));
+  grid[bestR][bestC] = ball.ci;
+  const ci = ball.ci;
+  ball = null;
+
+  // flood match
+  const matches = floodMatch(bestR, bestC, ci);
+  if (matches.length >= 3) {
+    popCells(matches, false);
+    const pts = matches.length * 10 * level;
+    score += pts;
+    shakeF = 10;
+    showCombo(matches.length, pts);
+
+    const orphans = findOrphans();
+    if (orphans.length) {
+      score += orphans.length * 8 * level;
+      popCells(orphans, true);
+    }
+    updateHUD();
+    misses = 0;
+  } else {
+    misses++;
+    if (misses >= 5) { misses = 0; addRow(); }
+  }
+  checkDanger();
+  checkWin();
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  SHOW COMBO TEXT
+// ─────────────────────────────────────────────────────────────────
+function showCombo(count, pts) {
+  const el = document.getElementById('combo');
+  el.textContent = count >= 8 ? `CHAIN x${count}! +${pts}` : count >= 5 ? `COMBO x${count}! +${pts}` : `+${pts}`;
+  el.style.opacity = '1';
+  clearTimeout(comboTimer);
+  comboTimer = setTimeout(() => { el.style.opacity = '0'; }, 900);
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  WIN / LOSE
+// ─────────────────────────────────────────────────────────────────
+function checkDanger() {
+  for (let r = 0; r < grid.length; r++) {
+    for (let c = 0; c < COLS; c++) {
+      if (grid[r][c] >= 0) {
+        const p = bPos(r, c);
+        if (p.y + R >= DANGER_Y) { endGame(false); return; }
+      }
+    }
+  }
+}
+
+function checkWin() {
+  if (grid.every(row => row.every(ci => ci < 0))) {
+    level++;
+    score += 300 * level;
+    updateHUD();
+    setTimeout(() => { initGrid(INIT_ROWS + Math.floor(level / 2)); nextCI = randomCI(); }, 600);
+  }
+}
+
+function endGame(won) {
+  running = false;
+  cancelAnimationFrame(raf);
+  const ov = document.getElementById('overlay');
+  ov.innerHTML = `
+    <h1 style="color:${won ? '#0af' : '#f33'};text-shadow:0 0 24px ${won ? '#0af' : '#f33'}">${won ? 'CLEARED' : 'GAME OVER'}</h1>
+    <div class="sub">Score: ${score} &nbsp;|&nbsp; Level: ${level}</div>
+    <button class="btn" id="startBtn">Play Again</button>
+  `;
+  ov.style.display = 'flex';
+  document.getElementById('startBtn').addEventListener('click', startGame);
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  SHOOT
+// ─────────────────────────────────────────────────────────────────
+function shoot() {
+  if (ball || !running) return;
+  if (aimAngle > -0.12 || aimAngle < -Math.PI + 0.12) return; // safety clamp
+  shots++;
+  const ci = nextCI;
+  nextCI = randomCI();
+  ball = {
+    x: SHOOT_X, y: SHOOT_Y,
+    vx: Math.cos(aimAngle) * SPEED,
+    vy: Math.sin(aimAngle) * SPEED,
+    ci,
+  };
+  updateHUD();
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  HUD
+// ─────────────────────────────────────────────────────────────────
+function updateHUD() {
+  document.getElementById('scoreEl').textContent = score;
+  document.getElementById('levelEl').textContent = level;
+  document.getElementById('shotsEl').textContent = shots;
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  DRAW HELPERS
+// ─────────────────────────────────────────────────────────────────
+function hex2rgb(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  return [(n>>16)&0xff, (n>>8)&0xff, n&0xff];
+}
+
+function drawBubble(x, y, ci, alpha = 1, radiusScale = 1) {
+  const color = PALETTE[ci];
+  const glow  = PAL_GLOW[ci];
+  const [cr,cg,cb] = hex2rgb(color);
+  const rad = (R - 1) * radiusScale;
+
+  ctx.save();
+  ctx.globalAlpha = alpha;
+
+  // outer glow
+  ctx.shadowColor = glow;
+  ctx.shadowBlur  = 10 * radiusScale;
+
+  // gradient fill
+  const g = ctx.createRadialGradient(x - rad*0.3, y - rad*0.35, rad*0.05, x, y, rad);
+  g.addColorStop(0, `rgba(${Math.min(255,cr+100)},${Math.min(255,cg+100)},${Math.min(255,cb+100)},1)`);
+  g.addColorStop(0.55, `rgb(${cr},${cg},${cb})`);
+  g.addColorStop(1, `rgba(${cr*0.3|0},${cg*0.3|0},${cb*0.3|0},1)`);
+
+  ctx.beginPath();
+  ctx.arc(x, y, rad, 0, Math.PI * 2);
+  ctx.fillStyle = g;
+  ctx.fill();
+
+  // sharp rim
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = `rgba(${Math.min(255,cr+80)},${Math.min(255,cg+80)},${Math.min(255,cb+80)},0.8)`;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // specular highlight
+  ctx.beginPath();
+  ctx.ellipse(x - rad*0.26, y - rad*0.26, rad*0.28, rad*0.18, -Math.PI/4, 0, Math.PI*2);
+  ctx.fillStyle = 'rgba(255,255,255,0.38)';
+  ctx.shadowBlur = 0;
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function drawBackground() {
+  // deep black-navy gradient
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#000a14');
+  bg.addColorStop(1, '#000508');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  // grid lines
+  ctx.save();
+  ctx.strokeStyle = 'rgba(0,100,200,0.06)';
+  ctx.lineWidth = 1;
+  for (let x = 0; x < W; x += 20) {
+    ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke();
+  }
+  for (let y = 0; y < H; y += 20) {
+    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
+  }
+  ctx.restore();
+
+  // twinkling stars
+  bgStars.forEach(s => {
+    s.t += s.sp;
+    const a = s.a * (0.5 + 0.5 * Math.sin(s.t));
+    ctx.save();
+    ctx.fillStyle = `rgba(100,200,255,${a})`;
+    ctx.shadowColor = '#0af';
+    ctx.shadowBlur = 3;
+    ctx.fillRect(s.x - s.r, s.y - s.r, s.r*2, s.r*2);
+    ctx.restore();
+  });
+
+  // horizontal scan line
+  scanY = (scanY + 0.4) % H;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(0,170,255,0.05)';
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(0, scanY); ctx.lineTo(W, scanY); ctx.stroke();
+  ctx.restore();
+}
+
+function drawDangerZone() {
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,60,60,0.25)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([5, 5]);
+  ctx.beginPath(); ctx.moveTo(0, DANGER_Y); ctx.lineTo(W, DANGER_Y); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+}
+
+function drawGrid() {
+  grid.forEach((row, r) => {
+    row.forEach((ci, c) => {
+      if (ci < 0) return;
+      const p = bPos(r, c);
+      drawBubble(p.x, p.y, ci);
+    });
+  });
+}
+
+function drawAimLine() {
+  if (ball || !running) return;
+  let x = SHOOT_X, y = SHOOT_Y;
+  let vx = Math.cos(aimAngle), vy = Math.sin(aimAngle);
+
+  ctx.save();
+  ctx.setLineDash([3, 7]);
+  ctx.strokeStyle = 'rgba(0,170,255,0.28)';
+  ctx.lineWidth = 1.5;
+  ctx.shadowColor = '#0af';
+  ctx.shadowBlur = 4;
+  ctx.beginPath();
+  ctx.moveTo(x, y - R);
+
+  let bounces = 0;
+  for (let i = 0; i < 280; i++) {
+    x += vx * 4; y += vy * 4;
+    if (x < R) { x = R; vx = Math.abs(vx); bounces++; }
+    if (x > W - R) { x = W - R; vx = -Math.abs(vx); bounces++; }
+    if (y < R * 2 || bounces > 2) break;
+    // stop if close to a bubble
+    let hit = false;
+    for (let r = 0; r < Math.min(grid.length, 8); r++) {
+      for (let c = 0; c < COLS; c++) {
+        if (grid[r] && grid[r][c] >= 0) {
+          const p = bPos(r, c);
+          if (Math.hypot(p.x - x, p.y - y) < DIAM) { hit = true; break; }
+        }
+      }
+      if (hit) break;
+    }
+    ctx.lineTo(x, y);
+    if (hit) break;
+  }
+
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+}
+
+function drawShooter() {
+  const len = 44;
+  const ex = SHOOT_X + Math.cos(aimAngle) * len;
+  const ey = SHOOT_Y + Math.sin(aimAngle) * len;
+
+  ctx.save();
+
+  // turret base — sharp rectangle
+  ctx.shadowColor = '#0af';
+  ctx.shadowBlur = 14;
+  ctx.fillStyle = '#001833';
+  ctx.strokeStyle = '#0af';
+  ctx.lineWidth = 2;
+  const bw = 28, bh = 18;
+  ctx.beginPath();
+  ctx.moveTo(SHOOT_X - bw/2 + 4, SHOOT_Y - bh/2);
+  ctx.lineTo(SHOOT_X + bw/2, SHOOT_Y - bh/2);
+  ctx.lineTo(SHOOT_X + bw/2 - 4, SHOOT_Y + bh/2);
+  ctx.lineTo(SHOOT_X - bw/2, SHOOT_Y + bh/2);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  // barrel
+  ctx.lineCap = 'square';
+  ctx.lineWidth = 7;
+  ctx.strokeStyle = '#001833';
+  ctx.beginPath();
+  ctx.moveTo(SHOOT_X, SHOOT_Y);
+  ctx.lineTo(ex, ey);
+  ctx.stroke();
+
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = '#0af';
+  ctx.shadowBlur = 16;
+  ctx.beginPath();
+  ctx.moveTo(SHOOT_X, SHOOT_Y);
+  ctx.lineTo(ex, ey);
+  ctx.stroke();
+
+  // barrel tip cross
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = '#fff';
+  ctx.shadowBlur = 6;
+  const tipX = ex, tipY = ey;
+  const perp = aimAngle + Math.PI / 2;
+  ctx.beginPath();
+  ctx.moveTo(tipX + Math.cos(perp)*5, tipY + Math.sin(perp)*5);
+  ctx.lineTo(tipX - Math.cos(perp)*5, tipY - Math.sin(perp)*5);
+  ctx.stroke();
+
+  ctx.restore();
+
+  // current ball on shooter
+  drawBubble(SHOOT_X, SHOOT_Y, ball ? ball.ci : nextCI);
+
+  // next ball preview
+  ctx.save();
+  ctx.fillStyle = '#0af';
+  ctx.font = '8px Courier New';
+  ctx.letterSpacing = '0.15em';
+  ctx.textAlign = 'center';
+  ctx.fillText('NEXT', SHOOT_X + 46, SHOOT_Y - 16);
+  ctx.restore();
+  drawBubble(SHOOT_X + 46, SHOOT_Y, ball ? nextCI : nextCI, 0.75, 0.72);
+}
+
+function drawParticles() {
+  particles = particles.filter(p => {
+    p.x += p.vx; p.y += p.vy; p.vy += 0.12;
+    p.life -= 0.028;
+    if (p.life <= 0) return false;
+    ctx.save();
+    ctx.globalAlpha = p.life;
+    ctx.fillStyle = PALETTE[p.ci];
+    ctx.shadowColor = PAL_GLOW[p.ci];
+    ctx.shadowBlur = 5;
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.rot + (1 - p.life) * 3);
+    ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size);
+    ctx.restore();
+    return true;
+  });
+}
+
+function drawFloaters() {
+  floaters = floaters.filter(f => {
+    f.x += f.vx; f.y += f.vy; f.vy += 0.18;
+    f.life -= 0.018;
+    if (f.life <= 0 || f.y > H + 40) return false;
+    drawBubble(f.x, f.y, f.ci, Math.min(1, f.life * 2));
+    return true;
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  UPDATE
+// ─────────────────────────────────────────────────────────────────
+function update() {
+  if (!ball) return;
+
+  ball.x += ball.vx;
+  ball.y += ball.vy;
+
+  // wall bounce
+  if (ball.x < R) { ball.x = R; ball.vx = Math.abs(ball.vx); }
+  if (ball.x > W - R) { ball.x = W - R; ball.vx = -Math.abs(ball.vx); }
+
+  // out the top → ceiling snap
+  if (ball.y <= R + 2) { ball.y = R + 2; snap(); return; }
+
+  // out the bottom (missed completely)
+  if (ball.y > H + 40) { ball = null; return; }
+
+  // collision with grid bubbles
+  for (let r = 0; r < grid.length; r++) {
+    const maxY = bPos(r, 0).y + R;
+    if (maxY < ball.y - R * 2) continue;
+    const minY = bPos(r, 0).y - R;
+    if (minY > ball.y + R * 2) break;
+    for (let c = 0; c < COLS; c++) {
+      if (!grid[r] || grid[r][c] < 0) continue;
+      const p = bPos(r, c);
+      if (Math.hypot(p.x - ball.x, p.y - ball.y) < DIAM - 2) {
+        snap();
+        return;
+      }
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  GAME LOOP
+// ─────────────────────────────────────────────────────────────────
+function loop() {
+  update();
+
+  ctx.save();
+  if (shakeF > 0) {
+    const s = shakeF * 1.5;
+    ctx.translate((Math.random() - 0.5) * s, (Math.random() - 0.5) * s);
+    shakeF--;
+  }
+
+  drawBackground();
+  drawDangerZone();
+  drawGrid();
+  drawFloaters();
+  drawAimLine();
+  drawShooter();
+  if (ball) drawBubble(ball.x, ball.y, ball.ci);
+  drawParticles();
+
+  ctx.restore();
+
+  raf = requestAnimationFrame(loop);
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  INPUT
+// ─────────────────────────────────────────────────────────────────
+function setAim(clientX, clientY) {
+  const rect = canvas.getBoundingClientRect();
+  const mx = (clientX - rect.left) * (W / rect.width);
+  const my = (clientY - rect.top) * (H / rect.height);
+  const a  = Math.atan2(my - SHOOT_Y, mx - SHOOT_X);
+  aimAngle = Math.max(-Math.PI + 0.12, Math.min(-0.12, a));
+}
+
+canvas.addEventListener('mousemove', e => { if (running) setAim(e.clientX, e.clientY); });
+canvas.addEventListener('click',     e => { setAim(e.clientX, e.clientY); shoot(); });
+
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (running) setAim(e.touches[0].clientX, e.touches[0].clientY);
+}, { passive: false });
+canvas.addEventListener('touchend', e => {
+  e.preventDefault();
+  if (running) { setAim(e.changedTouches[0].clientX, e.changedTouches[0].clientY); shoot(); }
+}, { passive: false });
+
+// ─────────────────────────────────────────────────────────────────
+//  START
+// ─────────────────────────────────────────────────────────────────
+function startGame() {
+  score = 0; level = 1; shots = 0; misses = 0;
+  ball = null; particles = []; floaters = [];
+  updateHUD();
+  document.getElementById('overlay').style.display = 'none';
+  initGrid(INIT_ROWS);
+  initStars();
+  nextCI = randomCI();
+  running = true;
+  cancelAnimationFrame(raf);
+  loop();
+}
+
+document.getElementById('startBtn').addEventListener('click', startGame);
+</script>
 
 </body>
 </html>
