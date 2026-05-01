@@ -162,9 +162,9 @@ const COLS    = 13;          // cols per even row
 const INIT_ROWS = 7;
 const SPEED   = 13;
 
-// 6 shades — all in the blue/cyan/white family
-const PALETTE = ['#00aaff','#00eeff','#4466dd','#88ddff','#ffffff','#0033bb'];
-const PAL_GLOW= ['#0af','#0ef','#44f','#8df','#aaf','#04f'];
+// 5 shades — purple → dark blue → light blue → cyan → white
+const PALETTE = ['#7700ee','#0033bb','#3399ff','#00eeff','#ffffff'];
+const PAL_GLOW= ['#84f',  '#04f',  '#3af',  '#0ef',  '#eef'];
 
 const W = COLS * DIAM + R + R;          // canvas width
 const H = 580;                           // canvas height
@@ -199,7 +199,7 @@ let shakeF      = 0;
 let comboTimer  = 0;
 let bgStars     = [];
 let scanY       = 0;
-let wipeVer     = 'v900';
+let rowCountdown = 0;
 
 // ─────────────────────────────────────────────────────────────────
 //  BG STARS
@@ -265,9 +265,7 @@ function randomCI() {
   const present = new Set();
   grid.forEach(row => row.forEach(ci => { if (ci >= 0) present.add(ci); }));
   const pool = present.size ? [...present] : PALETTE.map((_,i)=>i);
-  // cap at 4 colors for playability
-  const limited = pool.slice(0, 4);
-  return limited[Math.floor(Math.random() * limited.length)];
+  return pool[Math.floor(Math.random() * pool.length)];
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -399,7 +397,7 @@ function snap() {
     misses = 0;
   } else {
     misses++;
-    if (misses >= 5) { misses = 0; addRow(); }
+    if (misses >= 3) { misses = 0; addRow(); checkDanger(); }
   }
   checkDanger();
   checkWin();
@@ -435,7 +433,7 @@ function checkWin() {
     level++;
     score += 300 * level;
     updateHUD();
-    setTimeout(() => { initGrid(INIT_ROWS + Math.floor(level / 2)); nextCI = randomCI(); }, 600);
+    setTimeout(() => { initGrid(INIT_ROWS + Math.floor(level / 2)); nextCI = randomCI(); rowCountdown = rowInterval(); }, 600);
   }
 }
 
@@ -726,7 +724,21 @@ function drawFloaters() {
 // ─────────────────────────────────────────────────────────────────
 //  UPDATE
 // ─────────────────────────────────────────────────────────────────
+function rowInterval() {
+  return Math.max(300, 900 - (level - 1) * 90); // 15s → 5s over 10 levels
+}
+
 function update() {
+  // auto-row pressure timer
+  if (running) {
+    rowCountdown--;
+    if (rowCountdown <= 0) {
+      addRow();
+      rowCountdown = rowInterval();
+      checkDanger();
+    }
+  }
+
   if (!ball) return;
 
   ball.x += ball.vx;
@@ -834,6 +846,7 @@ canvas.addEventListener('touchend', e => {
 function startGame() {
   score = 0; level = 1; shots = 0; misses = 0;
   ball = null; particles = []; floaters = [];
+  rowCountdown = rowInterval();
   updateHUD();
   document.getElementById('overlay').style.display = 'none';
   initGrid(INIT_ROWS);
