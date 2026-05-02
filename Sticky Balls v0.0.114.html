@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>Sticky Balls</title>
+  <title>Sticky Balls v0.0.114</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -36,36 +36,39 @@
     }
     canvas { display: block; }
 
-    /* ── HUD overlay ── */
-    #hud {
-      position: absolute;
-      top: 0; left: 0; right: 0;
+    /* ── Stat bar above canvas ── */
+    #stat-bar {
       display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      padding: 10px 14px 0;
-      pointer-events: none;
+      flex-shrink: 0;
+      margin-bottom: 4px;
+      border: 2px solid #0af;
+      box-shadow: 0 0 12px #0af8, 0 0 40px #0055aa44;
+      position: relative;
     }
-    .hud-block {
+    .stat-block {
+      flex: 1;
       display: flex;
       flex-direction: column;
+      align-items: center;
+      padding: 7px 0 6px;
       gap: 1px;
     }
-    .hud-label {
+    .stat-block + .stat-block {
+      border-left: 2px solid #0af;
+    }
+    .stat-label {
       font-size: 11px;
       letter-spacing: 0.2em;
       color: #0af;
       text-transform: uppercase;
     }
-    .hud-val {
+    .stat-val {
       font-size: 22px;
       font-weight: bold;
       color: #fff;
       line-height: 1;
       text-shadow: 0 0 8px #0af;
     }
-    .hud-block.right { text-align: right; }
-    .hud-block.center { text-align: center; }
 
     /* ── Overlay screens ── */
     #overlay {
@@ -117,15 +120,15 @@
     /* ── responsive tweaks for small/landscape screens ── */
     @media (max-width: 400px) {
       #overlay h1 { font-size: 26px; }
-      .hud-val { font-size: 18px; }
+      .stat-val { font-size: 18px; }
     }
     @media (max-height: 500px) and (orientation: landscape) {
       #overlay { gap: 10px; }
       #overlay h1 { font-size: 22px; }
       #overlay .sub { font-size: 11px; }
       .btn { padding: 8px 28px; min-height: 40px; font-size: 11px; }
-      .hud-val { font-size: 16px; }
-      .hud-label { font-size: 9px; }
+      .stat-val { font-size: 16px; }
+      .stat-label { font-size: 9px; }
     }
 
     /* ── combo flash ── */
@@ -204,6 +207,31 @@
       font-weight: bold; text-transform: uppercase; font-style: italic;
     }
     .subpanel-footer { position: sticky; bottom: 0; height: 6px; background: var(--color-bg-dark); }
+
+    /* ── Mute toggle ── */
+    #mute-btn {
+      position: absolute;
+      top: 50%;
+      right: 8px;
+      transform: translateY(-50%);
+      min-width: 44px;
+      min-height: 44px;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: 2px solid #0af;
+      color: #0af;
+      font-size: 18px;
+      cursor: pointer;
+      clip-path: polygon(4px 0%, 100% 0%, calc(100% - 4px) 100%, 0% 100%);
+      transition: background 0.12s, color 0.12s;
+      flex-shrink: 0;
+    }
+    #mute-btn:hover { background: #0af; color: #000; }
+    #mute-btn.muted { border-color: #555; color: #555; }
   </style>
 </head>
 <body>
@@ -232,13 +260,49 @@
                 <button class="start-menu-btn" onclick="showStartPanel('settings')"><span>Settings</span><span style="margin-left:auto; font-size:1rem; opacity:0.4; font-family:sans-serif;">›</span></button>
             </div>
             <p style="font-size:10px; text-transform:uppercase; letter-spacing:0.35em; color:var(--color-primary); opacity:0.6; text-align:center; padding:12px 0; border-top: 1px solid var(--color-shadow);">
-                &copy; Tacticon Studios 2026 &nbsp;&mdash;&nbsp; v0.0.112
+                &copy; Tacticon Studios 2026 &nbsp;&mdash;&nbsp; v0.0.114
             </p>
         </div>
 
         <div id="start-howtoplay" class="menu-scroll hidden relative z-10">
             <div class="subpanel-header"><button class="start-back-btn" onclick="showStartPanel('main')">← Back</button><h2>How to Play</h2></div>
-            <div class="p-5 text-[12px]"><p style="color:var(--color-primary);opacity:0.5;text-align:center;margin-top:32px">Coming soon.</p></div>
+            <div class="p-5 text-[12px] space-y-5">
+              <div>
+                <p style="color:var(--color-glow);font-weight:bold;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">Objective</p>
+                <p style="color:#d1d5db">Clear all bubbles from the grid before any bubble reaches the red danger line. Pop groups of 3 or more matching colours to score points and level up.</p>
+              </div>
+              <div>
+                <p style="color:var(--color-glow);font-weight:bold;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">Controls</p>
+                <ul style="color:#d1d5db;list-style:none;padding:0;margin:0">
+                  <li>• <span style="color:var(--color-primary)">Drag / Swipe</span> — aim the shooter</li>
+                  <li>• <span style="color:var(--color-primary)">Release / Tap</span> — fire</li>
+                </ul>
+              </div>
+              <div>
+                <p style="color:var(--color-glow);font-weight:bold;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">Scoring</p>
+                <ul style="color:#d1d5db;list-style:none;padding:0;margin:0">
+                  <li>• Pop 3–4 bubbles &nbsp;— <span style="color:var(--color-primary)">10 pts each (×1.0)</span></li>
+                  <li>• Pop 5–7 bubbles &nbsp;— <span style="color:var(--color-primary)">10 pts each (×1.3 combo)</span></li>
+                  <li>• Pop 8+ bubbles &nbsp;&nbsp;— <span style="color:var(--color-primary)">10 pts each (×1.6 chain)</span></li>
+                  <li>• Orphaned bubbles — <span style="color:var(--color-primary)">8 pts each</span></li>
+                  <li style="margin-top:4px;opacity:0.6">All multipliers scale with your current level.</li>
+                </ul>
+              </div>
+              <div>
+                <p style="color:var(--color-glow);font-weight:bold;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">Mechanics</p>
+                <ul style="color:#d1d5db;list-style:none;padding:0;margin:0">
+                  <li>• <span style="color:var(--color-primary)">Orphans</span> — bubbles left floating after a pop fall away for a bonus</li>
+                  <li>• <span style="color:var(--color-primary)">Miss streak</span> — 3 shots that don't pop anything add a new row</li>
+                  <li>• <span style="color:var(--color-primary)">Pressure</span> — new rows push down automatically, faster each level</li>
+                  <li>• <span style="color:var(--color-primary)">Ball speed</span> — shots get faster as your score grows</li>
+                  <li>• <span style="color:var(--color-primary)">Efficiency</span> — final score is multiplied by your pops-per-shot ratio</li>
+                </ul>
+              </div>
+              <div>
+                <p style="color:var(--color-glow);font-weight:bold;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">Level Up</p>
+                <p style="color:#d1d5db">Clear every bubble to advance. Each level adds more starting rows and a speed bonus.</p>
+              </div>
+            </div>
             <div class="subpanel-footer"></div>
         </div>
 
@@ -267,23 +331,24 @@
 
 <div id="game-container" class="hidden">
 
+<div id="stat-bar">
+  <div class="stat-block">
+    <span class="stat-label">Score</span>
+    <span class="stat-val" id="scoreEl">0</span>
+  </div>
+  <div class="stat-block">
+    <span class="stat-label">Level</span>
+    <span class="stat-val" id="levelEl">1</span>
+  </div>
+  <div class="stat-block">
+    <span class="stat-label">Shots</span>
+    <span class="stat-val" id="shotsEl">0</span>
+  </div>
+  <button id="mute-btn" title="Toggle sound" aria-label="Toggle sound">S</button>
+</div>
+
 <div id="wrap">
   <canvas id="canvas"></canvas>
-
-  <div id="hud">
-    <div class="hud-block">
-      <span class="hud-label">Score</span>
-      <span class="hud-val" id="scoreEl">0</span>
-    </div>
-    <div class="hud-block center">
-      <span class="hud-label">Level</span>
-      <span class="hud-val" id="levelEl">1</span>
-    </div>
-    <div class="hud-block right">
-      <span class="hud-label">Shots</span>
-      <span class="hud-val" id="shotsEl">0</span>
-    </div>
-  </div>
 
   <div id="combo"></div>
 
@@ -294,19 +359,151 @@
   </div>
 </div>
 
-<p style="font-size:11px;text-align:center;opacity:0.4;padding:6px 12px;letter-spacing:0.2em;text-transform:uppercase;max-width:100vw;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;flex-shrink:0;">&copy; Tacticon Studios 2026 &mdash; v0.0.112</p>
+<p style="font-size:11px;text-align:center;opacity:0.4;padding:6px 12px;letter-spacing:0.2em;text-transform:uppercase;max-width:100vw;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;flex-shrink:0;">&copy; Tacticon Studios 2026 &mdash; v0.0.114</p>
 
 </div>
 
 <script>
 'use strict';
 
-(function(){ var _k='sb_wipe_v112'; if(localStorage.getItem(_k)!=='1'){ localStorage.removeItem('stickyballs_hs'); localStorage.setItem(_k,'1'); } })();
+(function(){ var _k='sb_wipe_v114'; if(localStorage.getItem(_k)!=='1'){ localStorage.removeItem('stickyballs_hs'); localStorage.setItem(_k,'1'); } })();
+
+// ─────────────────────────────────────────────────────────────────
+//  AUDIO
+// ─────────────────────────────────────────────────────────────────
+const _ac = { ctx: null };
+function _audioCtx() {
+  if (!_ac.ctx) _ac.ctx = new (window.AudioContext || window.webkitAudioContext)();
+  return _ac.ctx;
+}
+let _muted = false;
+
+function playTone(freq, dur, type='sine', vol=0.3, delay=0) {
+  if (_muted) return;
+  try {
+    const ctx = _audioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, ctx.currentTime + delay);
+    gain.gain.setValueAtTime(vol, ctx.currentTime + delay);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + dur);
+    osc.start(ctx.currentTime + delay);
+    osc.stop(ctx.currentTime + delay + dur);
+  } catch(e) {}
+}
+
+function playNoise(dur, vol=0.2) {
+  if (_muted) return;
+  try {
+    const ctx = _audioCtx();
+    const buf = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    const src = ctx.createBufferSource();
+    const gain = ctx.createGain();
+    src.buffer = buf; src.connect(gain); gain.connect(ctx.destination);
+    gain.gain.setValueAtTime(vol, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+    src.start(); src.stop(ctx.currentTime + dur);
+  } catch(e) {}
+}
+
+// Ball collision / bounce — short low thud
+function sfxBounce() {
+  playNoise(0.06, 0.12);
+  playTone(80, 0.07, 'sine', 0.15);
+}
+
+// Balls merging / sticking — satisfying thwock
+function sfxStick() {
+  playTone(180, 0.04, 'triangle', 0.22);
+  playNoise(0.05, 0.1);
+  playTone(110, 0.08, 'sine', 0.14, 0.03);
+}
+
+// Pop (match burst) — punchy pop scaled by combo size
+function sfxPop(count) {
+  const baseFreq = count >= 8 ? 520 : count >= 5 ? 420 : 320;
+  playTone(baseFreq, 0.12, 'square', 0.18);
+  playTone(baseFreq * 1.5, 0.08, 'sine', 0.12, 0.04);
+  playNoise(0.07, 0.08);
+}
+
+// Level complete — upward chime sequence
+function sfxLevelComplete() {
+  const notes = [523, 659, 784, 1047];
+  notes.forEach((f, i) => playTone(f, 0.18, 'sine', 0.22, i * 0.1));
+}
+
+// Game over — descending tone
+function sfxGameOver() {
+  playTone(440, 0.2, 'sawtooth', 0.2);
+  playTone(330, 0.25, 'sawtooth', 0.18, 0.18);
+  playTone(220, 0.35, 'sawtooth', 0.15, 0.38);
+  playTone(110, 0.5,  'sawtooth', 0.12, 0.65);
+}
+
+// Button click — crisp UI tap
+function sfxClick() {
+  playTone(880, 0.05, 'square', 0.12);
+  playTone(1100, 0.04, 'sine', 0.08, 0.03);
+}
+
+// Mute toggle button
+(function() {
+  // Lazy-init AudioContext on first any-interaction (covers iOS requirement)
+  function _initAudio() {
+    try { _audioCtx(); } catch(e) {}
+    document.removeEventListener('pointerdown', _initAudio, true);
+    document.removeEventListener('keydown', _initAudio, true);
+  }
+  document.addEventListener('pointerdown', _initAudio, true);
+  document.addEventListener('keydown', _initAudio, true);
+
+  // Wire mute button after DOM ready
+  function wireMuteBtn() {
+    const btn = document.getElementById('mute-btn');
+    if (!btn) return;
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      _muted = !_muted;
+      btn.textContent = _muted ? 'M' : 'S';
+      btn.classList.toggle('muted', _muted);
+      btn.title = _muted ? 'Unmute sound' : 'Mute sound';
+      btn.setAttribute('aria-label', _muted ? 'Unmute sound' : 'Mute sound');
+      if (!_muted) sfxClick();
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', wireMuteBtn);
+  } else {
+    wireMuteBtn();
+  }
+})();
 
 // ─────────────────────────────────────────────────────────────────
 //  START MENU
 // ─────────────────────────────────────────────────────────────────
 const PATCH_NOTES = [
+  {
+    v: 'v0.0.114',
+    date: '2026-05-02',
+    notes: [
+      'Add basic soundscape — Web Audio synthesised sounds',
+      'Mute/unmute toggle added',
+    ]
+  },
+  {
+    v: 'v0.0.113',
+    date: '2026-05-02',
+    notes: [
+      'Moved Score, Level, and Shots above the game canvas into a bordered stat bar.',
+      'Ball speed now starts slow and ramps up gradually as score increases (7 → 16).',
+      'Added How to Play content.',
+    ]
+  },
   {
     v: 'v0.0.112',
     date: '2026-05-02',
@@ -354,6 +551,7 @@ function renderPatchNotes() {
 }
 const PANELS = ['main','howtoplay','settings','highscores','patchnotes'];
 function showStartPanel(name, fromPopstate=false) {
+    if (!fromPopstate) sfxClick();
     PANELS.forEach(p => { const el = document.getElementById('start-'+p); if (el) el.classList.toggle('hidden', p !== name); });
     if (name === 'highscores') renderHighScores();
     if (name === 'patchnotes') renderPatchNotes();
@@ -374,6 +572,7 @@ window.addEventListener('popstate', function(e) {
     }
 });
 function startGame() {
+    sfxClick();
     history.pushState({ panel: 'game' }, '');
     document.getElementById('start-overlay').classList.add('hidden');
     const gc = document.getElementById('game-container');
@@ -389,7 +588,7 @@ const DIAM    = R * 2;
 const ROW_H   = Math.round(DIAM * 0.866);
 const COLS    = 13;          // cols per even row
 const INIT_ROWS = 7;
-const SPEED   = 13;
+function ballSpeed() { return Math.min(16, 7 + score / 140); }
 
 // 5 shades — purple → dark blue → light blue → cyan → white
 const PALETTE = ['#7700ee','#0033bb','#3399ff','#00eeff','#ffffff'];
@@ -619,6 +818,7 @@ function snap() {
   // flood match
   const matches = floodMatch(bestR, bestC, ci);
   if (matches.length >= 3) {
+    sfxPop(matches.length);
     popCells(matches, false);
     // Combo multiplier: base x1.0 for 3-4, x1.3 for 5-7, x1.6 for 8+
     const comboMult = matches.length >= 8 ? 1.6 : matches.length >= 5 ? 1.3 : 1.0;
@@ -638,6 +838,7 @@ function snap() {
     updateHUD();
     misses = 0;
   } else {
+    sfxStick();
     misses++;
     if (misses >= 3) { misses = 0; addRow(); checkDanger(); }
   }
@@ -672,6 +873,7 @@ function checkDanger() {
 
 function checkWin() {
   if (grid.every(row => row.every(ci => ci < 0))) {
+    sfxLevelComplete();
     score += 300 * level;   // bonus for the level just cleared
     level++;
     misses = 0;
@@ -701,6 +903,7 @@ function endGame(won) {
   if (running === false) return;
   running = false;
   cancelAnimationFrame(raf);
+  if (won) { sfxLevelComplete(); } else { sfxGameOver(); }
   const finalScore = calcFinalScore();
   saveScore(finalScore, 'Level ' + level);
   const effPct = shots > 0 ? Math.round((ballsPopped / shots) * 100) : 0;
@@ -722,10 +925,11 @@ function shoot() {
   shots++;
   const ci = nextCI;
   nextCI = randomCI();
+  const spd = ballSpeed();
   ball = {
     x: SHOOT_X, y: SHOOT_Y,
-    vx: Math.cos(aimAngle) * SPEED,
-    vy: Math.sin(aimAngle) * SPEED,
+    vx: Math.cos(aimAngle) * spd,
+    vy: Math.sin(aimAngle) * spd,
     ci,
   };
   updateHUD();
@@ -1008,8 +1212,8 @@ function update() {
   ball.y += ball.vy;
 
   // wall bounce
-  if (ball.x < R) { ball.x = R; ball.vx = Math.abs(ball.vx); }
-  if (ball.x > W - R) { ball.x = W - R; ball.vx = -Math.abs(ball.vx); }
+  if (ball.x < R) { ball.x = R; ball.vx = Math.abs(ball.vx); sfxBounce(); }
+  if (ball.x > W - R) { ball.x = W - R; ball.vx = -Math.abs(ball.vx); sfxBounce(); }
 
   // out the top → ceiling snap
   if (ball.y <= R + 2) { ball.y = R + 2; snap(); return; }
@@ -1073,24 +1277,18 @@ function resizeGame() {
   const vw = window.innerWidth;
   const vh = window.innerHeight || document.documentElement.clientHeight;
 
-  // Account for footer height + border + a small breathing gap.
-  // In landscape the footer is hidden to maximise play area.
   const isLandscape = vw > vh;
   const footer = document.querySelector('#game-container > p');
-  if (footer) {
-    if (isLandscape) {
-      footer.style.display = 'none';
-    } else {
-      footer.style.display = '';
-    }
-  }
-  const footerH = isLandscape ? 0 : 30; // footer + gap
-  const borderH = 4;
-  const safeH   = 8;  // small breathing room
+  if (footer) footer.style.display = isLandscape ? 'none' : '';
+
+  const footerH  = isLandscape ? 0 : 30;
+  const statBarH = 54; // stat bar height + gap
+  const borderH  = 4;
+  const safeH    = 8;
 
   const scale = Math.min(1,
     (vw - 4) / W,
-    (vh - footerH - borderH - safeH) / H
+    (vh - footerH - statBarH - borderH - safeH) / H
   );
 
   const scaledW = Math.round(W * scale);
@@ -1099,10 +1297,12 @@ function resizeGame() {
   canvas.style.width  = scaledW + 'px';
   canvas.style.height = scaledH + 'px';
 
-  // Keep the #wrap border box exactly in step with the scaled canvas
   const wrap = document.getElementById('wrap');
   wrap.style.width  = scaledW + 'px';
   wrap.style.height = scaledH + 'px';
+
+  const statBar = document.getElementById('stat-bar');
+  if (statBar) statBar.style.width = scaledW + 'px';
 }
 window.addEventListener('resize', resizeGame);
 window.addEventListener('orientationchange', () => setTimeout(resizeGame, 200));
