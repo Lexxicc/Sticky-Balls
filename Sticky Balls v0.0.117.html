@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>Sticky Balls v0.0.116</title>
+  <title>Sticky Balls v0.0.117</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -244,79 +244,99 @@
                          style="width:min(460px,88vw); height:auto; overflow:visible;"
                          aria-label="Sticky Balls">
                       <defs>
-                        <!-- Glow filter for text -->
                         <filter id="sb-glow" x="-20%" y="-40%" width="140%" height="180%">
                           <feGaussianBlur stdDeviation="3.5" result="blur"/>
                           <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
                         </filter>
-                        <!-- Soft inner glow for balls -->
                         <filter id="sb-ball-glow" x="-50%" y="-50%" width="200%" height="200%">
                           <feGaussianBlur stdDeviation="2.5" result="blur"/>
                           <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
                         </filter>
-                        <!-- Radial highlight for each ball -->
+                        <radialGradient id="sb-hi-purple" cx="38%" cy="32%" r="55%">
+                          <stop offset="0%" stop-color="#ddb8ff" stop-opacity="0.85"/>
+                          <stop offset="100%" stop-color="#5500bb" stop-opacity="0"/>
+                        </radialGradient>
+                        <radialGradient id="sb-hi-darkblue" cx="38%" cy="32%" r="55%">
+                          <stop offset="0%" stop-color="#aaccff" stop-opacity="0.85"/>
+                          <stop offset="100%" stop-color="#002299" stop-opacity="0"/>
+                        </radialGradient>
+                        <radialGradient id="sb-hi-lightblue" cx="38%" cy="32%" r="55%">
+                          <stop offset="0%" stop-color="#ccecff" stop-opacity="0.85"/>
+                          <stop offset="100%" stop-color="#1166cc" stop-opacity="0"/>
+                        </radialGradient>
                         <radialGradient id="sb-hi-cyan" cx="38%" cy="32%" r="55%">
-                          <stop offset="0%" stop-color="#ccf4ff" stop-opacity="0.85"/>
-                          <stop offset="100%" stop-color="#0077cc" stop-opacity="0"/>
+                          <stop offset="0%" stop-color="#ccffff" stop-opacity="0.85"/>
+                          <stop offset="100%" stop-color="#009999" stop-opacity="0"/>
                         </radialGradient>
-                        <radialGradient id="sb-hi-blue" cx="38%" cy="32%" r="55%">
-                          <stop offset="0%" stop-color="#c0d8ff" stop-opacity="0.85"/>
-                          <stop offset="100%" stop-color="#1144aa" stop-opacity="0"/>
-                        </radialGradient>
-                        <radialGradient id="sb-hi-teal" cx="38%" cy="32%" r="55%">
-                          <stop offset="0%" stop-color="#bbffee" stop-opacity="0.85"/>
-                          <stop offset="100%" stop-color="#008877" stop-opacity="0"/>
-                        </radialGradient>
-                        <radialGradient id="sb-hi-sky" cx="38%" cy="32%" r="55%">
-                          <stop offset="0%" stop-color="#e0f8ff" stop-opacity="0.85"/>
-                          <stop offset="100%" stop-color="#0099ee" stop-opacity="0"/>
+                        <radialGradient id="sb-hi-white" cx="38%" cy="32%" r="55%">
+                          <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9"/>
+                          <stop offset="100%" stop-color="#aabbcc" stop-opacity="0"/>
                         </radialGradient>
                       </defs>
 
-                      <!-- ── Decorative balls (background layer, behind text) ── -->
                       <!-- Far-left cluster -->
-                      <circle cx="18"  cy="62"  r="11" fill="#0066bb" filter="url(#sb-ball-glow)"/>
-                      <circle cx="18"  cy="62"  r="11" fill="url(#sb-hi-blue)"/>
-                      <circle cx="32"  cy="74"  r="8"  fill="#0099ee" filter="url(#sb-ball-glow)"/>
-                      <circle cx="32"  cy="74"  r="8"  fill="url(#sb-hi-sky)"/>
-                      <circle cx="30"  cy="50"  r="7"  fill="#00bbdd" filter="url(#sb-ball-glow)"/>
+                      <circle cx="18"  cy="62"  r="11" fill="#7700ee" filter="url(#sb-ball-glow)"/>
+                      <circle cx="18"  cy="62"  r="11" fill="url(#sb-hi-purple)"/>
+                      <circle cx="32"  cy="74"  r="8"  fill="#3399ff" filter="url(#sb-ball-glow)"/>
+                      <circle cx="32"  cy="74"  r="8"  fill="url(#sb-hi-lightblue)"/>
+                      <circle cx="30"  cy="50"  r="7"  fill="#00eeff" filter="url(#sb-ball-glow)"/>
                       <circle cx="30"  cy="50"  r="7"  fill="url(#sb-hi-cyan)"/>
+                      <circle cx="12"  cy="46"  r="5"  fill="#0033bb" filter="url(#sb-ball-glow)"/>
+                      <circle cx="12"  cy="46"  r="5"  fill="url(#sb-hi-darkblue)"/>
+                      <circle cx="42"  cy="60"  r="6"  fill="#ffffff" filter="url(#sb-ball-glow)"/>
+                      <circle cx="42"  cy="60"  r="6"  fill="url(#sb-hi-white)"/>
                       <!-- Top-left stragglers -->
-                      <circle cx="50"  cy="18"  r="6"  fill="#0099ee" filter="url(#sb-ball-glow)"/>
-                      <circle cx="50"  cy="18"  r="6"  fill="url(#sb-hi-sky)"/>
-                      <circle cx="64"  cy="10"  r="4.5" fill="#00bbdd" filter="url(#sb-ball-glow)"/>
+                      <circle cx="50"  cy="18"  r="6"  fill="#0033bb" filter="url(#sb-ball-glow)"/>
+                      <circle cx="50"  cy="18"  r="6"  fill="url(#sb-hi-darkblue)"/>
+                      <circle cx="64"  cy="10"  r="4.5" fill="#00eeff" filter="url(#sb-ball-glow)"/>
                       <circle cx="64"  cy="10"  r="4.5" fill="url(#sb-hi-cyan)"/>
+                      <circle cx="38"  cy="30"  r="5"  fill="#7700ee" filter="url(#sb-ball-glow)"/>
+                      <circle cx="38"  cy="30"  r="5"  fill="url(#sb-hi-purple)"/>
                       <!-- Between S and T -->
-                      <circle cx="82"  cy="24"  r="5.5" fill="#0088cc" filter="url(#sb-ball-glow)"/>
-                      <circle cx="82"  cy="24"  r="5.5" fill="url(#sb-hi-blue)"/>
+                      <circle cx="82"  cy="24"  r="5.5" fill="#3399ff" filter="url(#sb-ball-glow)"/>
+                      <circle cx="82"  cy="24"  r="5.5" fill="url(#sb-hi-lightblue)"/>
                       <!-- Centre-top cluster -->
-                      <circle cx="200" cy="8"   r="7"  fill="#0099ee" filter="url(#sb-ball-glow)"/>
-                      <circle cx="200" cy="8"   r="7"  fill="url(#sb-hi-sky)"/>
-                      <circle cx="214" cy="14"  r="5"  fill="#00ccff" filter="url(#sb-ball-glow)"/>
+                      <circle cx="200" cy="8"   r="7"  fill="#7700ee" filter="url(#sb-ball-glow)"/>
+                      <circle cx="200" cy="8"   r="7"  fill="url(#sb-hi-purple)"/>
+                      <circle cx="214" cy="14"  r="5"  fill="#00eeff" filter="url(#sb-ball-glow)"/>
                       <circle cx="214" cy="14"  r="5"  fill="url(#sb-hi-cyan)"/>
-                      <circle cx="187" cy="16"  r="4"  fill="#0077bb" filter="url(#sb-ball-glow)"/>
-                      <circle cx="187" cy="16"  r="4"  fill="url(#sb-hi-blue)"/>
+                      <circle cx="187" cy="16"  r="4"  fill="#3399ff" filter="url(#sb-ball-glow)"/>
+                      <circle cx="187" cy="16"  r="4"  fill="url(#sb-hi-lightblue)"/>
+                      <circle cx="226" cy="6"   r="4"  fill="#ffffff" filter="url(#sb-ball-glow)"/>
+                      <circle cx="226" cy="6"   r="4"  fill="url(#sb-hi-white)"/>
+                      <circle cx="175" cy="8"   r="3.5" fill="#0033bb" filter="url(#sb-ball-glow)"/>
+                      <circle cx="175" cy="8"   r="3.5" fill="url(#sb-hi-darkblue)"/>
                       <!-- Top-right stragglers -->
-                      <circle cx="350" cy="12"  r="6"  fill="#0088cc" filter="url(#sb-ball-glow)"/>
-                      <circle cx="350" cy="12"  r="6"  fill="url(#sb-hi-blue)"/>
-                      <circle cx="364" cy="22"  r="4.5" fill="#00bbdd" filter="url(#sb-ball-glow)"/>
-                      <circle cx="364" cy="22"  r="4.5" fill="url(#sb-hi-teal)"/>
+                      <circle cx="350" cy="12"  r="6"  fill="#0033bb" filter="url(#sb-ball-glow)"/>
+                      <circle cx="350" cy="12"  r="6"  fill="url(#sb-hi-darkblue)"/>
+                      <circle cx="364" cy="22"  r="4.5" fill="#7700ee" filter="url(#sb-ball-glow)"/>
+                      <circle cx="364" cy="22"  r="4.5" fill="url(#sb-hi-purple)"/>
+                      <circle cx="338" cy="24"  r="5"  fill="#00eeff" filter="url(#sb-ball-glow)"/>
+                      <circle cx="338" cy="24"  r="5"  fill="url(#sb-hi-cyan)"/>
                       <!-- Far-right cluster -->
-                      <circle cx="438" cy="58"  r="12" fill="#0066bb" filter="url(#sb-ball-glow)"/>
-                      <circle cx="438" cy="58"  r="12" fill="url(#sb-hi-blue)"/>
-                      <circle cx="424" cy="70"  r="9"  fill="#0099ee" filter="url(#sb-ball-glow)"/>
-                      <circle cx="424" cy="70"  r="9"  fill="url(#sb-hi-sky)"/>
-                      <circle cx="444" cy="76"  r="7"  fill="#00ccff" filter="url(#sb-ball-glow)"/>
+                      <circle cx="438" cy="58"  r="12" fill="#3399ff" filter="url(#sb-ball-glow)"/>
+                      <circle cx="438" cy="58"  r="12" fill="url(#sb-hi-lightblue)"/>
+                      <circle cx="424" cy="70"  r="9"  fill="#7700ee" filter="url(#sb-ball-glow)"/>
+                      <circle cx="424" cy="70"  r="9"  fill="url(#sb-hi-purple)"/>
+                      <circle cx="444" cy="76"  r="7"  fill="#00eeff" filter="url(#sb-ball-glow)"/>
                       <circle cx="444" cy="76"  r="7"  fill="url(#sb-hi-cyan)"/>
+                      <circle cx="452" cy="46"  r="6"  fill="#ffffff" filter="url(#sb-ball-glow)"/>
+                      <circle cx="452" cy="46"  r="6"  fill="url(#sb-hi-white)"/>
+                      <circle cx="413" cy="56"  r="5"  fill="#0033bb" filter="url(#sb-ball-glow)"/>
+                      <circle cx="413" cy="56"  r="5"  fill="url(#sb-hi-darkblue)"/>
                       <!-- Bottom stragglers -->
-                      <circle cx="130" cy="108" r="6"  fill="#0077bb" filter="url(#sb-ball-glow)"/>
-                      <circle cx="130" cy="108" r="6"  fill="url(#sb-hi-blue)"/>
-                      <circle cx="145" cy="114" r="4"  fill="#00aaff" filter="url(#sb-ball-glow)"/>
-                      <circle cx="145" cy="114" r="4"  fill="url(#sb-hi-sky)"/>
-                      <circle cx="310" cy="112" r="5.5" fill="#0099ee" filter="url(#sb-ball-glow)"/>
+                      <circle cx="130" cy="108" r="6"  fill="#0033bb" filter="url(#sb-ball-glow)"/>
+                      <circle cx="130" cy="108" r="6"  fill="url(#sb-hi-darkblue)"/>
+                      <circle cx="145" cy="114" r="4"  fill="#7700ee" filter="url(#sb-ball-glow)"/>
+                      <circle cx="145" cy="114" r="4"  fill="url(#sb-hi-purple)"/>
+                      <circle cx="116" cy="116" r="5"  fill="#3399ff" filter="url(#sb-ball-glow)"/>
+                      <circle cx="116" cy="116" r="5"  fill="url(#sb-hi-lightblue)"/>
+                      <circle cx="310" cy="112" r="5.5" fill="#00eeff" filter="url(#sb-ball-glow)"/>
                       <circle cx="310" cy="112" r="5.5" fill="url(#sb-hi-cyan)"/>
-                      <circle cx="325" cy="106" r="4"  fill="#00bbdd" filter="url(#sb-ball-glow)"/>
-                      <circle cx="325" cy="106" r="4"  fill="url(#sb-hi-teal)"/>
+                      <circle cx="325" cy="106" r="4"  fill="#ffffff" filter="url(#sb-ball-glow)"/>
+                      <circle cx="325" cy="106" r="4"  fill="url(#sb-hi-white)"/>
+                      <circle cx="298" cy="118" r="4"  fill="#7700ee" filter="url(#sb-ball-glow)"/>
+                      <circle cx="298" cy="118" r="4"  fill="url(#sb-hi-purple)"/>
 
                       <!-- ── Main text — two staggered lines ── -->
                       <!-- Drop-shadow layer -->
@@ -369,7 +389,7 @@
                 <button class="start-menu-btn" onclick="showStartPanel('settings')"><span>Settings</span><span style="margin-left:auto; font-size:1rem; opacity:0.4; font-family:sans-serif;">›</span></button>
             </div>
             <p style="font-size:10px; text-transform:uppercase; letter-spacing:0.35em; color:var(--color-primary); opacity:0.6; text-align:center; padding:12px 0; border-top: 1px solid var(--color-shadow);">
-                &copy; Tacticon Studios 2026 &nbsp;&mdash;&nbsp; v0.0.116
+                &copy; Tacticon Studios 2026 &nbsp;&mdash;&nbsp; v0.0.117
             </p>
         </div>
 
@@ -468,14 +488,14 @@
   </div>
 </div>
 
-<p style="font-size:11px;text-align:center;opacity:0.4;padding:6px 12px;letter-spacing:0.2em;text-transform:uppercase;max-width:100vw;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;flex-shrink:0;">&copy; Tacticon Studios 2026 &mdash; v0.0.116</p>
+<p style="font-size:11px;text-align:center;opacity:0.4;padding:6px 12px;letter-spacing:0.2em;text-transform:uppercase;max-width:100vw;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;flex-shrink:0;">&copy; Tacticon Studios 2026 &mdash; v0.0.117</p>
 
 </div>
 
 <script>
 'use strict';
 
-(function(){ var _k='sb_wipe_v116'; if(localStorage.getItem(_k)!=='1'){ localStorage.removeItem('stickyballs_hs'); localStorage.setItem(_k,'1'); } })();
+(function(){ var _k='sb_wipe_v117'; if(localStorage.getItem(_k)!=='1'){ localStorage.removeItem('stickyballs_hs'); localStorage.setItem(_k,'1'); } })();
 
 // ─────────────────────────────────────────────────────────────────
 //  AUDIO
@@ -596,6 +616,16 @@ function sfxClick() {
 //  START MENU
 // ─────────────────────────────────────────────────────────────────
 const PATCH_NOTES = [
+  {
+    v: 'v0.0.117',
+    date: '2026-05-02',
+    notes: [
+      'Logo balls now use actual in-game palette colours (purple, dark blue, light blue, cyan, white) with more balls added across clusters.',
+      'Descent rate reduced by ~17% — base row-pressure interval increased from 900 ms to 1080 ms.',
+      'Added thin white dotted boundary line at the danger zone so players can clearly see where balls must not reach.',
+      'Added Main Menu button on the game-over screen to return to the title screen without restarting.',
+    ]
+  },
   {
     v: 'v0.0.116',
     date: '2026-05-02',
@@ -1039,8 +1069,17 @@ function endGame(won) {
     <h1 style="color:${won ? '#0af' : '#f33'};text-shadow:0 0 24px ${won ? '#0af' : '#f33'}">${won ? 'CLEARED' : 'GAME OVER'}</h1>
     <div class="sub">Score: ${finalScore} &nbsp;|&nbsp; Level: ${level} &nbsp;|&nbsp; Efficiency: ${effPct}%</div>
     <button class="btn" onclick="startGame()">Play Again</button>
+    <button class="btn" onclick="goMainMenu()">Main Menu</button>
   `;
   ov.style.display = 'flex';
+}
+
+function goMainMenu() {
+  cancelAnimationFrame(raf);
+  running = false;
+  document.getElementById('game-container').classList.add('hidden');
+  document.getElementById('start-overlay').classList.remove('hidden');
+  showStartPanel('main', true);
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -1165,6 +1204,10 @@ function drawDangerZone() {
   ctx.strokeStyle = 'rgba(255,60,60,0.25)';
   ctx.lineWidth = 1;
   ctx.setLineDash([5, 5]);
+  ctx.beginPath(); ctx.moveTo(0, DANGER_Y); ctx.lineTo(W, DANGER_Y); ctx.stroke();
+  ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([2, 6]);
   ctx.beginPath(); ctx.moveTo(0, DANGER_Y); ctx.lineTo(W, DANGER_Y); ctx.stroke();
   ctx.setLineDash([]);
   ctx.restore();
@@ -1319,7 +1362,7 @@ function drawFloaters() {
 //  UPDATE
 // ─────────────────────────────────────────────────────────────────
 function rowInterval() {
-  return Math.max(300, 900 - (level - 1) * 90); // 900 ms at lvl 1 → floors at 300 ms from lvl 8+
+  return Math.max(300, 1080 - (level - 1) * 90);
 }
 
 function update() {
