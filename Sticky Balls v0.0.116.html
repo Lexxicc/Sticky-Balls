@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>Sticky Balls v0.0.115</title>
+  <title>Sticky Balls v0.0.116</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -369,7 +369,7 @@
                 <button class="start-menu-btn" onclick="showStartPanel('settings')"><span>Settings</span><span style="margin-left:auto; font-size:1rem; opacity:0.4; font-family:sans-serif;">›</span></button>
             </div>
             <p style="font-size:10px; text-transform:uppercase; letter-spacing:0.35em; color:var(--color-primary); opacity:0.6; text-align:center; padding:12px 0; border-top: 1px solid var(--color-shadow);">
-                &copy; Tacticon Studios 2026 &nbsp;&mdash;&nbsp; v0.0.115
+                &copy; Tacticon Studios 2026 &nbsp;&mdash;&nbsp; v0.0.116
             </p>
         </div>
 
@@ -393,8 +393,8 @@
                   <li>• Pop 3–4 bubbles &nbsp;— <span style="color:var(--color-primary)">10 pts each (×1.0)</span></li>
                   <li>• Pop 5–7 bubbles &nbsp;— <span style="color:var(--color-primary)">10 pts each (×1.3 combo)</span></li>
                   <li>• Pop 8+ bubbles &nbsp;&nbsp;— <span style="color:var(--color-primary)">10 pts each (×1.6 chain)</span></li>
-                  <li>• Orphaned bubbles — <span style="color:var(--color-primary)">8 pts each</span></li>
-                  <li style="margin-top:4px;opacity:0.6">All multipliers scale with your current level.</li>
+                  <li>• Orphaned bubbles — <span style="color:var(--color-primary)">8 pts each (×level)</span></li>
+                  <li style="margin-top:4px;opacity:0.6">All point values scale with your current level.</li>
                 </ul>
               </div>
               <div>
@@ -409,7 +409,7 @@
               </div>
               <div>
                 <p style="color:var(--color-glow);font-weight:bold;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">Level Up</p>
-                <p style="color:#d1d5db">Clear every bubble to advance. Each level adds more starting rows and a speed bonus.</p>
+                <p style="color:#d1d5db">Clear every bubble to advance. Each level adds more starting rows. Ball speed increases continuously as your score grows.</p>
               </div>
             </div>
             <div class="subpanel-footer"></div>
@@ -468,14 +468,14 @@
   </div>
 </div>
 
-<p style="font-size:11px;text-align:center;opacity:0.4;padding:6px 12px;letter-spacing:0.2em;text-transform:uppercase;max-width:100vw;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;flex-shrink:0;">&copy; Tacticon Studios 2026 &mdash; v0.0.115</p>
+<p style="font-size:11px;text-align:center;opacity:0.4;padding:6px 12px;letter-spacing:0.2em;text-transform:uppercase;max-width:100vw;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;flex-shrink:0;">&copy; Tacticon Studios 2026 &mdash; v0.0.116</p>
 
 </div>
 
 <script>
 'use strict';
 
-(function(){ var _k='sb_wipe_v115'; if(localStorage.getItem(_k)!=='1'){ localStorage.removeItem('stickyballs_hs'); localStorage.setItem(_k,'1'); } })();
+(function(){ var _k='sb_wipe_v116'; if(localStorage.getItem(_k)!=='1'){ localStorage.removeItem('stickyballs_hs'); localStorage.setItem(_k,'1'); } })();
 
 // ─────────────────────────────────────────────────────────────────
 //  AUDIO
@@ -596,6 +596,16 @@ function sfxClick() {
 //  START MENU
 // ─────────────────────────────────────────────────────────────────
 const PATCH_NOTES = [
+  {
+    v: 'v0.0.116',
+    date: '2026-05-02',
+    notes: [
+      'Fixed snap() ceiling-full fallback not triggering miss-streak pressure row when misses reaches 3.',
+      'Fixed checkWin() missing running guard — prevented spurious level-complete sound/state mutation after game over.',
+      'Fixed How to Play: orphan score now correctly shows "8 pts each (x level)", not flat 8.',
+      'Fixed How to Play: Level Up description corrected — speed scales with score continuously, not as a per-level bonus.',
+    ]
+  },
   {
     v: 'v0.0.115',
     date: '2026-05-02',
@@ -923,7 +933,7 @@ function snap() {
       const d = Math.hypot(p.x - ball.x, p.y - ball.y);
       if (d < bd) { bd = d; bestR = 0; bestC = c; }
     }
-    if (bestR < 0) { misses++; ball = null; checkDanger(); return; }
+    if (bestR < 0) { misses++; ball = null; if (misses >= 3) { misses = 0; addRow(); } checkDanger(); return; }
   }
 
   while (grid.length <= bestR) grid.push(Array(COLS).fill(-1));
@@ -988,6 +998,7 @@ function checkDanger() {
 }
 
 function checkWin() {
+  if (!running) return;
   if (grid.every(row => row.every(ci => ci < 0))) {
     sfxLevelComplete();
     score += 300 * level;   // bonus for the level just cleared
