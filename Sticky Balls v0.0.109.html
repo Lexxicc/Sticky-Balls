@@ -231,7 +231,7 @@
                 <button class="start-menu-btn" onclick="showStartPanel('settings')"><span>Settings</span><span style="margin-left:auto; font-size:1rem; opacity:0.4; font-family:sans-serif;">›</span></button>
             </div>
             <p style="font-size:10px; text-transform:uppercase; letter-spacing:0.35em; color:var(--color-primary); opacity:0.6; text-align:center; padding:12px 0; border-top: 1px solid var(--color-shadow);">
-                &copy; Tacticon Studios 2026 &nbsp;&mdash;&nbsp; v0.0.108
+                &copy; Tacticon Studios 2026 &nbsp;&mdash;&nbsp; v0.0.109
             </p>
         </div>
 
@@ -304,7 +304,7 @@
   </div>
 </div>
 
-<p style="font-size:11px;text-align:center;opacity:0.4;padding:6px 12px;letter-spacing:0.2em;text-transform:uppercase;max-width:100vw;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;flex-shrink:0;">&copy; Tacticon Studios 2026 &mdash; v0.0.108</p>
+<p style="font-size:11px;text-align:center;opacity:0.4;padding:6px 12px;letter-spacing:0.2em;text-transform:uppercase;max-width:100vw;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;flex-shrink:0;">&copy; Tacticon Studios 2026 &mdash; v0.0.109</p>
 
 </div>
 
@@ -415,6 +415,7 @@ let score       = 0;
 let level       = 1;
 let shots       = 0;
 let misses      = 0;
+let ballsPopped = 0;    // total balls cleared (direct pops + orphans)
 let running     = false;
 let raf         = null;
 let particles   = [];
@@ -614,14 +615,19 @@ function snap() {
   const matches = floodMatch(bestR, bestC, ci);
   if (matches.length >= 3) {
     popCells(matches, false);
-    const pts = matches.length * 10 * level;
+    // Combo multiplier: base x1.0 for 3-4, x1.3 for 5-7, x1.6 for 8+
+    const comboMult = matches.length >= 8 ? 1.6 : matches.length >= 5 ? 1.3 : 1.0;
+    const pts = Math.round(matches.length * 10 * level * comboMult);
     score += pts;
+    ballsPopped += matches.length;
     shakeF = 10;
     showCombo(matches.length, pts);
 
     const orphans = findOrphans();
     if (orphans.length) {
+      // Orphan bonus: 8 pts each but no combo multiplier (luck-of-position element)
       score += orphans.length * 8 * level;
+      ballsPopped += orphans.length;
       popCells(orphans, true);
     }
     updateHUD();
@@ -669,14 +675,28 @@ function checkWin() {
   }
 }
 
+function calcFinalScore() {
+  // Efficiency multiplier: rewards clearing more balls per shot fired.
+  // Ratio = ballsPopped / shots. Clamped to [0.25, 2.0].
+  // A player who pops 3 balls every shot gets ratio 3.0 → capped at 2.0.
+  // A player who fires many wasted shots gets ratio < 1 → score reduced.
+  // Minimum 0.25x ensures the score is never zeroed by bad luck on colour draws.
+  if (shots === 0) return score;
+  const ratio = ballsPopped / shots;
+  const mult  = Math.max(0.25, Math.min(2.0, ratio));
+  return Math.round(score * mult);
+}
+
 function endGame(won) {
   running = false;
   cancelAnimationFrame(raf);
-  saveScore(score, 'Level ' + level);
+  const finalScore = calcFinalScore();
+  saveScore(finalScore, 'Level ' + level);
+  const effPct = shots > 0 ? Math.round((ballsPopped / shots) * 100) : 0;
   const ov = document.getElementById('overlay');
   ov.innerHTML = `
     <h1 style="color:${won ? '#0af' : '#f33'};text-shadow:0 0 24px ${won ? '#0af' : '#f33'}">${won ? 'CLEARED' : 'GAME OVER'}</h1>
-    <div class="sub">Score: ${score} &nbsp;|&nbsp; Level: ${level}</div>
+    <div class="sub">Score: ${finalScore} &nbsp;|&nbsp; Level: ${level} &nbsp;|&nbsp; Efficiency: ${effPct}%</div>
     <button class="btn" onclick="initGame()">Play Again</button>
   `;
   ov.style.display = 'flex';
@@ -1102,7 +1122,7 @@ canvas.addEventListener('touchend', e => {
 //  INIT GAME (called from startGame() in start menu)
 // ─────────────────────────────────────────────────────────────────
 function initGame() {
-  score = 0; level = 1; shots = 0; misses = 0;
+  score = 0; level = 1; shots = 0; misses = 0; ballsPopped = 0;
   ball = null; particles = []; floaters = [];
   rowOffset = 0; shakeF = 0;
   rowCountdown = rowInterval();
