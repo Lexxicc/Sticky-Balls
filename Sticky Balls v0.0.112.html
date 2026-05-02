@@ -155,6 +155,7 @@
     }
 
     .hidden { display: none !important; }
+    #game-container { display: flex; width: 100%; height: 100%; flex-direction: column; align-items: center; justify-content: center; }
 
     .btn-pixel {
       padding: 4px 12px; text-transform: uppercase; font-weight: bold;
@@ -231,7 +232,7 @@
                 <button class="start-menu-btn" onclick="showStartPanel('settings')"><span>Settings</span><span style="margin-left:auto; font-size:1rem; opacity:0.4; font-family:sans-serif;">›</span></button>
             </div>
             <p style="font-size:10px; text-transform:uppercase; letter-spacing:0.35em; color:var(--color-primary); opacity:0.6; text-align:center; padding:12px 0; border-top: 1px solid var(--color-shadow);">
-                &copy; Tacticon Studios 2026 &nbsp;&mdash;&nbsp; v0.0.111
+                &copy; Tacticon Studios 2026 &nbsp;&mdash;&nbsp; v0.0.112
             </p>
         </div>
 
@@ -257,25 +258,14 @@
             <div class="subpanel-header"><button class="start-back-btn" onclick="showStartPanel('main')">← Back</button><h2>Settings</h2></div>
             <div class="p-6 space-y-6">
                 <div>
-                    <h3 style="color:var(--color-glow);text-transform:uppercase;font-weight:bold;font-size:0.875rem;border-bottom:1px solid var(--color-shadow);padding-bottom:8px;margin-bottom:16px;letter-spacing:0.1em">Audio</h3>
-                    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--color-shadow)">
-                        <span>SFX Volume</span>
-                        <div style="display:flex;align-items:center;gap:12px">
-                            <input type="range" id="vol-slider" min="0" max="100" value="100" oninput="updateVolume(this.value)" style="accent-color:var(--color-primary);width:120px">
-                            <span id="vol-val" style="color:var(--color-glow);width:40px;text-align:right">100%</span>
-                        </div>
-                    </div>
-                    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0">
-                        <span>Sound Effects</span>
-                        <button id="sfx-toggle" onclick="toggleSFX()" class="btn-pixel" style="font-size:0.875rem;padding:4px 16px">ON</button>
-                    </div>
+                    <p style="color:var(--color-primary);opacity:0.5;font-size:0.875rem;text-align:center;margin-top:32px">No settings available yet.</p>
                 </div>
             </div>
             <div class="subpanel-footer"></div>
         </div>
     </div>
 
-<div id="game-container" class="hidden" style="width:100%;height:100%;flex-direction:column;align-items:center;justify-content:center;">
+<div id="game-container" class="hidden">
 
 <div id="wrap">
   <canvas id="canvas"></canvas>
@@ -304,19 +294,36 @@
   </div>
 </div>
 
-<p style="font-size:11px;text-align:center;opacity:0.4;padding:6px 12px;letter-spacing:0.2em;text-transform:uppercase;max-width:100vw;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;flex-shrink:0;">&copy; Tacticon Studios 2026 &mdash; v0.0.111</p>
+<p style="font-size:11px;text-align:center;opacity:0.4;padding:6px 12px;letter-spacing:0.2em;text-transform:uppercase;max-width:100vw;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;flex-shrink:0;">&copy; Tacticon Studios 2026 &mdash; v0.0.112</p>
 
 </div>
 
 <script>
 'use strict';
 
-(function(){ var _k='sb_wipe_v111'; if(localStorage.getItem(_k)!=='1'){ localStorage.removeItem('stickyballs_hs'); localStorage.setItem(_k,'1'); } })();
+(function(){ var _k='sb_wipe_v112'; if(localStorage.getItem(_k)!=='1'){ localStorage.removeItem('stickyballs_hs'); localStorage.setItem(_k,'1'); } })();
 
 // ─────────────────────────────────────────────────────────────────
 //  START MENU
 // ─────────────────────────────────────────────────────────────────
-const PATCH_NOTES = [];
+const PATCH_NOTES = [
+  {
+    v: 'v0.0.112',
+    date: '2026-05-02',
+    notes: [
+      'Fixed floodMatch/findOrphans Set key collision when c>=100 — use "r,c" string keys.',
+      'Fixed endGame called twice when checkDanger fires twice in snap() — added running guard.',
+      'Fixed checkDanger skipping bubbles in odd-row column 12 — use colsInRow(r) bound.',
+      'Fixed missed-ball count not incrementing when ceiling row is full in snap() fallback.',
+      'Fixed update() collision loop reading grid[r][COLS-1] on short rows — use colsInRow(r).',
+      'Removed non-functional volume slider and SFX toggle from Settings (no audio system).',
+      'Fixed checkWin rowOffset reset race condition — reset rowOffset synchronously.',
+      'Fixed Play Again button routing through startGame() to maintain history stack.',
+      'Fixed game-container visibility using class toggle only (no conflicting inline style).',
+      'Fixed rowInterval() comment — math clamps at level 8 (not 10), comment updated.',
+    ]
+  }
+];
 const HS_KEY = 'stickyballs_hs';
 
 function saveScore(score, label='') {
@@ -366,15 +373,11 @@ window.addEventListener('popstate', function(e) {
         showStartPanel('main', true);
     }
 });
-let sfxEnabled = true;
-function updateVolume(val) { document.getElementById('vol-val').innerText = val + '%'; }
-function toggleSFX() { sfxEnabled = !sfxEnabled; document.getElementById('sfx-toggle').innerText = sfxEnabled ? 'ON' : 'OFF'; }
 function startGame() {
     history.pushState({ panel: 'game' }, '');
     document.getElementById('start-overlay').classList.add('hidden');
     const gc = document.getElementById('game-container');
     gc.classList.remove('hidden');
-    gc.style.display = 'flex';
     initGame();
 }
 
@@ -510,7 +513,7 @@ function floodMatch(sr, sc, ci) {
   const found = [];
   while (stack.length) {
     const [r, c] = stack.pop();
-    const key = r * 100 + c;
+    const key = `${r},${c}`;
     if (visited.has(key)) continue;
     if (!grid[r] || grid[r][c] !== ci) continue;
     visited.add(key);
@@ -525,13 +528,13 @@ function findOrphans() {
   const queue = [];
   if (grid[0]) {
     for (let c = 0; c < COLS; c++) {
-      if (grid[0][c] >= 0) { connected.add(0 * 100 + c); queue.push([0, c]); }
+      if (grid[0][c] >= 0) { connected.add(`0,${c}`); queue.push([0, c]); }
     }
   }
   while (queue.length) {
     const [r, c] = queue.shift();
     neighbors(r, c).forEach(([nr, nc]) => {
-      const key = nr * 100 + nc;
+      const key = `${nr},${nc}`;
       if (!connected.has(key) && grid[nr] && grid[nr][nc] >= 0) {
         connected.add(key);
         queue.push([nr, nc]);
@@ -540,7 +543,7 @@ function findOrphans() {
   }
   const orphans = [];
   grid.forEach((row, r) => row.forEach((ci, c) => {
-    if (ci >= 0 && !connected.has(r * 100 + c)) orphans.push([r, c]);
+    if (ci >= 0 && !connected.has(`${r},${c}`)) orphans.push([r, c]);
   }));
   return orphans;
 }
@@ -605,7 +608,7 @@ function snap() {
       const d = Math.hypot(p.x - ball.x, p.y - ball.y);
       if (d < bd) { bd = d; bestR = 0; bestC = c; }
     }
-    if (bestR < 0) { ball = null; return; }
+    if (bestR < 0) { misses++; ball = null; checkDanger(); return; }
   }
 
   while (grid.length <= bestR) grid.push(Array(COLS).fill(-1));
@@ -658,7 +661,7 @@ function showCombo(count, pts) {
 // ─────────────────────────────────────────────────────────────────
 function checkDanger() {
   for (let r = 0; r < grid.length; r++) {
-    for (let c = 0; c < COLS; c++) {
+    for (let c = 0; c < colsInRow(r); c++) {
       if (grid[r][c] >= 0) {
         const p = bPos(r, c);
         if (p.y + R >= DANGER_Y) { endGame(false); return; }
@@ -676,8 +679,9 @@ function checkWin() {
     // rowCountdown cannot fire addRow() into the freshly-cleared grid
     // before initGrid() runs inside the setTimeout callback.
     rowCountdown = 9999;
+    rowOffset = 0;
     updateHUD();
-    setTimeout(() => { rowOffset = 0; initGrid(INIT_ROWS + Math.floor(level / 2)); nextCI = randomCI(); rowCountdown = rowInterval(); }, 600);
+    setTimeout(() => { initGrid(INIT_ROWS + Math.floor(level / 2)); nextCI = randomCI(); rowCountdown = rowInterval(); }, 600);
   }
 }
 
@@ -694,6 +698,7 @@ function calcFinalScore() {
 }
 
 function endGame(won) {
+  if (running === false) return;
   running = false;
   cancelAnimationFrame(raf);
   const finalScore = calcFinalScore();
@@ -703,7 +708,7 @@ function endGame(won) {
   ov.innerHTML = `
     <h1 style="color:${won ? '#0af' : '#f33'};text-shadow:0 0 24px ${won ? '#0af' : '#f33'}">${won ? 'CLEARED' : 'GAME OVER'}</h1>
     <div class="sub">Score: ${finalScore} &nbsp;|&nbsp; Level: ${level} &nbsp;|&nbsp; Efficiency: ${effPct}%</div>
-    <button class="btn" onclick="initGame()">Play Again</button>
+    <button class="btn" onclick="startGame()">Play Again</button>
   `;
   ov.style.display = 'flex';
 }
@@ -983,7 +988,7 @@ function drawFloaters() {
 //  UPDATE
 // ─────────────────────────────────────────────────────────────────
 function rowInterval() {
-  return Math.max(300, 900 - (level - 1) * 90); // 15s → 5s over 10 levels
+  return Math.max(300, 900 - (level - 1) * 90); // 900 ms at lvl 1 → floors at 300 ms from lvl 8+
 }
 
 function update() {
@@ -1023,7 +1028,7 @@ function update() {
     if (maxY < ball.y - R * 2) continue;
     const minY = bPos(r, 0).y - R;
     if (minY > ball.y + R * 2) break;
-    for (let c = 0; c < COLS; c++) {
+    for (let c = 0; c < colsInRow(r); c++) {
       if (!grid[r] || grid[r][c] < 0) continue;
       const p = bPos(r, c);
       if (Math.hypot(p.x - ball.x, p.y - ball.y) < DIAM - 2) {
