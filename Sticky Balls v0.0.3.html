@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>Sticky Balls v0.0.2</title>
+  <title>Sticky Balls v0.0.3</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -389,7 +389,7 @@
                 <button class="start-menu-btn" onclick="showStartPanel('settings')"><span>Settings</span><span style="margin-left:auto; font-size:1rem; opacity:0.4; font-family:sans-serif;">›</span></button>
             </div>
             <p style="font-size:10px; text-transform:uppercase; letter-spacing:0.35em; color:var(--color-primary); opacity:0.6; text-align:center; padding:12px 0; border-top: 1px solid var(--color-shadow);">
-                &copy; Tacticon Studios 2026 &nbsp;&mdash;&nbsp; v0.0.2
+                &copy; Tacticon Studios 2026 &nbsp;&mdash;&nbsp; v0.0.3
             </p>
         </div>
 
@@ -488,7 +488,7 @@
   </div>
 </div>
 
-<p style="font-size:11px;text-align:center;opacity:0.4;padding:6px 12px;letter-spacing:0.2em;text-transform:uppercase;max-width:100vw;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;flex-shrink:0;">&copy; Tacticon Studios 2026 &mdash; v0.0.2</p>
+<p style="font-size:11px;text-align:center;opacity:0.4;padding:6px 12px;letter-spacing:0.2em;text-transform:uppercase;max-width:100vw;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;flex-shrink:0;">&copy; Tacticon Studios 2026 &mdash; v0.0.3</p>
 
 </div>
 
@@ -617,6 +617,19 @@ function sfxClick() {
 // ─────────────────────────────────────────────────────────────────
 const PATCH_NOTES = [
   {
+    v: 'v0.0.3',
+    date: '2026-05-02',
+    notes: [
+      'Fixed aim/trajectory line checking COLS (total) instead of colsInRow(r) — line now correctly ignores out-of-bounds cells on odd-width rows.',
+      'Fixed ball speed being frame-rate dependent — velocity now multiplied by delta time (px/s) so speed is identical on 60/120/144 Hz screens.',
+      'Fixed state transition timers (row pressure countdown, screen-shake duration, particle and floater physics) using frame counts — all converted to elapsed milliseconds via delta time.',
+      'Fixed temporal dead zone in initGame() — cancelAnimationFrame(raf) now called before running is set or any state is touched, preventing a stale loop from reading half-initialised state.',
+      'Fixed checkDanger() called twice per frame when a miss-streak triggers addRow() inside snap() — removed redundant call from the miss-streak branch (single unconditional call at end of snap() is sufficient).',
+      'Fixed state not cleared on return to main menu — goMainMenu() and the popstate back-navigation handler now call resetGameState() to wipe ball, grid, particles, score and all counters before showing the start screen.',
+      'Fixed ctx.letterSpacing set on canvas 2D context (not a valid API, silently ignored) — removed and replaced with manually spaced "N E X T" text string.',
+    ]
+  },
+  {
     v: 'v0.0.2',
     date: '2026-05-02',
     notes: [
@@ -720,8 +733,7 @@ window.addEventListener('popstate', function(e) {
     if (!ov.classList.contains('hidden')) {
         showStartPanel('main', true);
     } else if (gc && !gc.classList.contains('hidden')) {
-        cancelAnimationFrame(raf);
-        running = false;
+        resetGameState();
         gc.classList.add('hidden');
         ov.classList.remove('hidden');
         showStartPanel('main', true);
@@ -744,7 +756,8 @@ const DIAM    = R * 2;
 const ROW_H   = Math.round(DIAM * 0.866);
 const COLS    = 13;          // cols per even row
 const INIT_ROWS = 7;
-function ballSpeed() { return Math.min(16, 7 + score / 140); }
+// Returns ball speed in px/s (×60 so feel is identical to the old px/frame values at 60 fps)
+function ballSpeed() { return Math.min(16, 7 + score / 140) * 60; }
 
 // 5 shades — purple → dark blue → light blue → cyan → white
 const PALETTE = ['#7700ee','#0033bb','#3399ff','#00eeff','#ffffff'];
@@ -786,6 +799,7 @@ let bgStars     = [];
 let scanY       = 0;
 let rowCountdown = 0;
 let rowOffset    = 0;   // increments with each addRow unshift; keeps hex-stagger parity stable
+let lastFrameTime = 0;  // timestamp of previous animation frame (ms)
 
 // ─────────────────────────────────────────────────────────────────
 //  BG STARS
@@ -908,7 +922,8 @@ function popCells(cells, asFloaters = false) {
     const p = bPos(r, c);
     const ci = grid[r][c];
     if (asFloaters) {
-      floaters.push({ x: p.x, y: p.y, ci, vy: 1 + Math.random() * 2, vx: (Math.random()-0.5)*2, life: 1 });
+      // velocities in px/s (×60 to match old px/frame feel at 60 fps)
+      floaters.push({ x: p.x, y: p.y, ci, vy: (1 + Math.random() * 2) * 60, vx: (Math.random()-0.5) * 120, life: 1 });
     } else {
       spawnPop(p.x, p.y, ci);
     }
@@ -920,13 +935,14 @@ function popCells(cells, asFloaters = false) {
 //  PARTICLES
 // ─────────────────────────────────────────────────────────────────
 function spawnPop(x, y, ci) {
+  // velocities in px/s (old px/frame values ×60 to keep same feel at 60 fps)
   for (let i = 0; i < 12; i++) {
     const angle = Math.random() * Math.PI * 2;
-    const spd   = 1.5 + Math.random() * 5;
+    const spd   = (1.5 + Math.random() * 5) * 60;
     particles.push({
       x, y,
       vx: Math.cos(angle) * spd,
-      vy: Math.sin(angle) * spd - 1,
+      vy: Math.sin(angle) * spd - 60,
       ci,
       life: 1,
       size: 1.5 + Math.random() * 3.5,
@@ -981,7 +997,7 @@ function snap() {
     const pts = Math.round(matches.length * 10 * level * comboMult);
     score += pts;
     ballsPopped += matches.length;
-    shakeF = 10;
+    shakeF = 167;  // ~10 frames at 60 fps in ms
     showCombo(matches.length, pts);
 
     const orphans = findOrphans();
@@ -996,7 +1012,7 @@ function snap() {
   } else {
     sfxStick();
     misses++;
-    if (misses >= 3) { misses = 0; addRow(); checkDanger(); }
+    if (misses >= 3) { misses = 0; addRow(); }
   }
   checkDanger();
   checkWin();
@@ -1074,9 +1090,16 @@ function endGame(won) {
   ov.style.display = 'flex';
 }
 
-function goMainMenu() {
+function resetGameState() {
   cancelAnimationFrame(raf);
   running = false;
+  ball = null; particles = []; floaters = [];
+  grid = []; score = 0; level = 1; shots = 0; misses = 0; ballsPopped = 0;
+  rowOffset = 0; shakeF = 0; lastFrameTime = 0; rowCountdown = 0;
+}
+
+function goMainMenu() {
+  resetGameState();
   document.getElementById('game-container').classList.add('hidden');
   document.getElementById('start-overlay').classList.remove('hidden');
   showStartPanel('main', true);
@@ -1246,7 +1269,7 @@ function drawAimLine() {
     // stop if close to a bubble
     let hit = false;
     for (let r = 0; r < Math.min(grid.length, 8); r++) {
-      for (let c = 0; c < COLS; c++) {
+      for (let c = 0; c < colsInRow(r); c++) {
         if (grid[r] && grid[r][c] >= 0) {
           const p = bPos(r, c);
           if (Math.hypot(p.x - x, p.y - y) < DIAM) { hit = true; break; }
@@ -1323,17 +1346,16 @@ function drawShooter() {
   ctx.save();
   ctx.fillStyle = '#0af';
   ctx.font = '8px Courier New';
-  ctx.letterSpacing = '0.15em';
   ctx.textAlign = 'center';
-  ctx.fillText('NEXT', SHOOT_X + 46, SHOOT_Y - 16);
+  ctx.fillText('N E X T', SHOOT_X + 46, SHOOT_Y - 16);
   ctx.restore();
   drawBubble(SHOOT_X + 46, SHOOT_Y, nextCI, 0.75, 0.72);
 }
 
-function drawParticles() {
+function drawParticles(dt) {
   particles = particles.filter(p => {
-    p.x += p.vx; p.y += p.vy; p.vy += 0.12;
-    p.life -= 0.028;
+    p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 7.2 * dt;  // gravity: 0.12 px/f² × 60 = 7.2 px/s²
+    p.life -= dt * 1.68;  // 1/0.028 frames ≈ 595 ms lifetime → rate = 1000/595 ≈ 1.68/s
     if (p.life <= 0) return false;
     ctx.save();
     ctx.globalAlpha = p.life;
@@ -1348,10 +1370,10 @@ function drawParticles() {
   });
 }
 
-function drawFloaters() {
+function drawFloaters(dt) {
   floaters = floaters.filter(f => {
-    f.x += f.vx; f.y += f.vy; f.vy += 0.18;
-    f.life -= 0.018;
+    f.x += f.vx * dt; f.y += f.vy * dt; f.vy += 10.8 * dt;  // gravity: 0.18 px/f² × 60 = 10.8 px/s²
+    f.life -= dt * 1.08;  // 1/0.018 frames ≈ 926 ms lifetime → rate = 1000/926 ≈ 1.08/s
     if (f.life <= 0 || f.y > H + 40) return false;
     drawBubble(f.x, f.y, f.ci, Math.min(1, f.life * 2));
     return true;
@@ -1365,10 +1387,10 @@ function rowInterval() {
   return Math.max(300, 1080 - (level - 1) * 90);
 }
 
-function update() {
-  // auto-row pressure timer
+function update(dt) {
+  // auto-row pressure timer (rowInterval returns ms; rowCountdown counts down in ms)
   if (running) {
-    rowCountdown--;
+    rowCountdown -= dt * 1000;
     if (rowCountdown <= 0) {
       addRow();
       rowCountdown = rowInterval();
@@ -1378,8 +1400,8 @@ function update() {
 
   if (!ball) return;
 
-  ball.x += ball.vx;
-  ball.y += ball.vy;
+  ball.x += ball.vx * dt;
+  ball.y += ball.vy * dt;
 
   // wall bounce
   if (ball.x < R) { ball.x = R; ball.vx = Math.abs(ball.vx); sfxBounce(); }
@@ -1416,24 +1438,31 @@ function update() {
 // ─────────────────────────────────────────────────────────────────
 //  GAME LOOP
 // ─────────────────────────────────────────────────────────────────
-function loop() {
-  update();
+function loop(now) {
+  // Compute delta time in seconds; clamp to 100 ms to avoid huge jumps after tab-switch
+  if (!lastFrameTime) lastFrameTime = now;
+  const dt = Math.min((now - lastFrameTime) / 1000, 0.1);
+  lastFrameTime = now;
+
+  update(dt);
 
   ctx.save();
   if (shakeF > 0) {
-    const s = shakeF * 1.5;
+    // shakeF is now in ms; decay at 60 "units" per second to match old 1-per-frame feel
+    const s = (shakeF / 167) * 15;  // scale intensity: 167 ms max → ~15px max displacement
     ctx.translate((Math.random() - 0.5) * s, (Math.random() - 0.5) * s);
-    shakeF--;
+    shakeF -= dt * 1000;
+    if (shakeF < 0) shakeF = 0;
   }
 
   drawBackground();
   drawDangerZone();
   drawGrid();
-  drawFloaters();
+  drawFloaters(dt);
   drawAimLine();
   drawShooter();
   if (ball) drawBubble(ball.x, ball.y, ball.ci);
-  drawParticles();
+  drawParticles(dt);
 
   ctx.restore();
 
@@ -1508,9 +1537,12 @@ canvas.addEventListener('touchend', e => {
 //  INIT GAME (called from startGame() in start menu)
 // ─────────────────────────────────────────────────────────────────
 function initGame() {
+  // Cancel any existing loop before touching state (fixes TDZ: raf read before new loop starts)
+  cancelAnimationFrame(raf);
+  running = false;
   score = 0; level = 1; shots = 0; misses = 0; ballsPopped = 0;
   ball = null; particles = []; floaters = [];
-  rowOffset = 0; shakeF = 0;
+  rowOffset = 0; shakeF = 0; lastFrameTime = 0;
   rowCountdown = rowInterval();
   updateHUD();
   document.getElementById('overlay').style.display = 'none';
@@ -1518,7 +1550,6 @@ function initGame() {
   initStars();
   nextCI = randomCI();
   running = true;
-  cancelAnimationFrame(raf);
   resizeGame();
   loop();
 }
