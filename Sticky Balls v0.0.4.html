@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>Sticky Balls v0.0.3</title>
+  <title>Sticky Balls v0.0.4</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -176,7 +176,7 @@
                   0 0 28px 4px color-mix(in srgb, var(--color-primary) 28%, transparent),
                   0 0 70px color-mix(in srgb, var(--color-primary) 12%, transparent),
                   inset 0 0 40px rgba(0,0,0,0.45);
-      width: 640px; max-width: 92vw; max-height: 92vh;
+      width: 640px; max-width: 92vw; max-height: 92dvh;
       overflow-y: auto; scrollbar-width: none;
     }
     .menu-scroll::-webkit-scrollbar { display: none; }
@@ -391,7 +391,7 @@
                 <button class="start-menu-btn" onclick="showStartPanel('settings')"><span>Settings</span><span style="margin-left:auto; font-size:1rem; opacity:0.4; font-family:sans-serif;">›</span></button>
             </div>
             <p style="font-size:10px; text-transform:uppercase; letter-spacing:0.35em; color:var(--color-primary); opacity:0.6; text-align:center; padding:12px 0; border-top: 1px solid var(--color-shadow);">
-                &copy; Tacticon Studios 2026 &nbsp;&mdash;&nbsp; v0.0.3
+                &copy; Tacticon Studios 2026 &nbsp;&mdash;&nbsp; v0.0.4
             </p>
         </div>
 
@@ -490,7 +490,7 @@
   </div>
 </div>
 
-<p style="font-size:11px;text-align:center;opacity:0.4;padding:6px 12px;letter-spacing:0.2em;text-transform:uppercase;max-width:100vw;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;flex-shrink:0;">&copy; Tacticon Studios 2026 &mdash; v0.0.3</p>
+<p style="font-size:11px;text-align:center;opacity:0.4;padding:6px 12px;letter-spacing:0.2em;text-transform:uppercase;max-width:100vw;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;flex-shrink:0;">&copy; Tacticon Studios 2026 &mdash; v0.0.4</p>
 
 </div>
 
@@ -618,6 +618,7 @@ function sfxClick() {
 //  START MENU
 // ─────────────────────────────────────────────────────────────────
 const PATCH_NOTES = [
+  { v: 'v0.0.4', date: '2026-05-03', notes: ['Version bump.'] },
   {
     v: 'v0.0.3',
     date: '2026-05-02',
@@ -785,6 +786,7 @@ canvas.height = H;
 let grid        = [];   // grid[row][col] = colorIndex (0–5) | -1
 let ball        = null; // { x, y, vx, vy, ci }
 let nextCI      = 0;
+let previewCI   = 0;
 let aimAngle    = -Math.PI / 2;
 let score       = 0;
 let level       = 1;
@@ -1058,7 +1060,7 @@ function checkWin() {
     rowCountdown = 9999;
     rowOffset = 0;
     updateHUD();
-    setTimeout(() => { initGrid(INIT_ROWS + Math.floor(level / 2)); nextCI = randomCI(); rowCountdown = rowInterval(); }, 600);
+    setTimeout(() => { initGrid(INIT_ROWS + Math.floor(level / 2)); nextCI = randomCI(); previewCI = randomCI(); rowCountdown = rowInterval(); }, 600);
   }
 }
 
@@ -1115,7 +1117,8 @@ function shoot() {
   if (aimAngle > -0.12 || aimAngle < -Math.PI + 0.12) return; // safety clamp
   shots++;
   const ci = nextCI;
-  nextCI = randomCI();
+  nextCI = previewCI;
+  previewCI = randomCI();
   const spd = ballSpeed();
   ball = {
     x: SHOOT_X, y: SHOOT_Y,
@@ -1351,7 +1354,7 @@ function drawShooter() {
   ctx.textAlign = 'center';
   ctx.fillText('N E X T', SHOOT_X + 46, SHOOT_Y - 16);
   ctx.restore();
-  drawBubble(SHOOT_X + 46, SHOOT_Y, nextCI, 0.75, 0.72);
+  drawBubble(SHOOT_X + 46, SHOOT_Y, ball ? nextCI : previewCI, 0.75, 0.72);
 }
 
 function drawParticles(dt) {
@@ -1552,6 +1555,7 @@ function initGame() {
   initGrid(INIT_ROWS);
   initStars();
   nextCI = randomCI();
+  previewCI = randomCI();
   running = true;
   resizeGame();
   loop();
