@@ -618,7 +618,7 @@ function sfxClick() {
 //  START MENU
 // ─────────────────────────────────────────────────────────────────
 const PATCH_NOTES = [
-  { v: 'v0.0.4', date: '2026-05-03', notes: ['Version bump.'] },
+  { v: 'v0.0.4', date: '2026-05-03', notes: ['Row pressure progression slowed — interval step reduced from 90 ms to 50 ms per level, minimum raised from 300 ms to 500 ms.'] },
   {
     v: 'v0.0.3',
     date: '2026-05-02',
@@ -1389,7 +1389,7 @@ function drawFloaters(dt) {
 //  UPDATE
 // ─────────────────────────────────────────────────────────────────
 function rowInterval() {
-  return Math.max(300, 1080 - (level - 1) * 90);
+  return Math.max(500, 1080 - (level - 1) * 50);
 }
 
 function update(dt) {
