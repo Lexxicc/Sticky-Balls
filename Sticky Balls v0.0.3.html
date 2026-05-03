@@ -155,6 +155,7 @@
       --color-accent:   #44aaff;
       --color-glow:     #aaddff;
       --color-shadow:   #000508;
+      --sab: env(safe-area-inset-bottom, 0px);
     }
 
     .hidden { display: none !important; }
@@ -170,6 +171,7 @@
     .menu-scroll {
       background: linear-gradient(180deg, var(--color-bg-dark) 0%, var(--color-panel) 45%, var(--color-panel) 55%, var(--color-bg-dark) 100%);
       border: 6px solid var(--color-primary);
+      box-shadow: 0 0 6px 2px #00aaff8c, 0 0 28px 4px #00aaff47, 0 0 70px #00aaff1f, inset 0 0 40px rgba(0,0,0,0.45);
       box-shadow: 0 0 6px 2px color-mix(in srgb, var(--color-primary) 55%, transparent),
                   0 0 28px 4px color-mix(in srgb, var(--color-primary) 28%, transparent),
                   0 0 70px color-mix(in srgb, var(--color-primary) 12%, transparent),
@@ -1474,7 +1476,8 @@ function loop(now) {
 // ─────────────────────────────────────────────────────────────────
 function resizeGame() {
   const vw = window.innerWidth;
-  const vh = window.innerHeight || document.documentElement.clientHeight;
+  const safeBottom = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sab') || '0');
+  const vh = (window.innerHeight || document.documentElement.clientHeight) - safeBottom;
 
   const isLandscape = vw > vh;
   const footer = document.querySelector('#game-container > p');
