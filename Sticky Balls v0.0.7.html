@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="author" content="lexxicc">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>Sticky Balls v0.0.5</title>
+  <title>Sticky Balls v0.0.7</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -242,7 +242,7 @@
     <div id="start-overlay" class="fixed inset-0 z-[200] flex items-center justify-center" style="position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:#000;">
         <div id="start-main" class="menu-scroll relative z-10">
             <div class="text-center pt-4 pb-4 px-6" style="border-bottom: 4px solid var(--color-shadow);">
-                <div style="min-height:180px; display:flex; align-items:center; justify-content:center;">
+                <div style="min-height:180px; display:flex; align-items:flex-end; justify-content:center;">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 120"
                          style="width:min(460px,88vw); height:auto; overflow:visible;"
                          aria-label="Sticky Balls">
@@ -378,7 +378,7 @@
                             filter="url(#sb-glow)">BALLS</text>
                     </svg>
                 </div>
-                <div style="display:flex; align-items:center; justify-content:center; gap:12px; margin-top:8px;">
+                <div style="display:flex; align-items:center; justify-content:center; gap:12px; margin-top:16px;">
                     <div style="flex-grow:1; height:1px; background:linear-gradient(to right,transparent,var(--color-primary))"></div>
                     <span style="font-size:1rem; color:var(--color-primary); text-transform:uppercase; letter-spacing:0.4em;">MATCH &amp; POP</span>
                     <div style="flex-grow:1; height:1px; background:linear-gradient(to left,transparent,var(--color-primary))"></div>
@@ -392,7 +392,7 @@
                 <button class="start-menu-btn" onclick="showStartPanel('settings')"><span>Settings</span><span style="margin-left:auto; font-size:1rem; opacity:0.4; font-family:sans-serif;">›</span></button>
             </div>
             <p style="font-size:10px; text-transform:uppercase; letter-spacing:0.35em; color:var(--color-primary); opacity:0.6; text-align:center; padding:12px 0; border-top: 1px solid var(--color-shadow);">
-                &copy; Tacticon Studios 2026 &nbsp;&mdash;&nbsp; v0.0.5
+                &copy; Tacticon Studios 2026 &nbsp;&mdash;&nbsp; v0.0.7
             </p>
         </div>
 
@@ -453,8 +453,9 @@
         <div id="start-settings" class="menu-scroll hidden relative z-10">
             <div class="subpanel-header"><button class="start-back-btn" onclick="showStartPanel('main')">← Back</button><h2>Settings</h2></div>
             <div class="p-6 space-y-6">
-                <div>
-                    <p style="color:var(--color-primary);opacity:0.5;font-size:0.875rem;text-align:center;margin-top:32px">No settings available yet.</p>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border:2px solid var(--color-shadow);background:rgba(0,170,255,0.04);">
+                    <span style="color:var(--color-glow);font-size:1rem;text-transform:uppercase;letter-spacing:0.1em;">Sound Effects</span>
+                    <button id="settings-mute-btn" type="button" style="font-family:'VT323',monospace;font-size:1.1rem;padding:6px 18px;color:var(--color-primary);background:transparent;border:2px solid var(--color-primary);cursor:pointer;letter-spacing:0.1em;text-transform:uppercase;min-width:64px;">On</button>
                 </div>
             </div>
             <div class="subpanel-footer"></div>
@@ -476,7 +477,6 @@
     <span class="stat-label">Shots</span>
     <span class="stat-val" id="shotsEl">0</span>
   </div>
-  <button id="mute-btn" title="Toggle sound" aria-label="Toggle sound">S</button>
 </div>
 
 <div id="wrap">
@@ -491,7 +491,7 @@
   </div>
 </div>
 
-<p style="font-size:11px;text-align:center;opacity:0.4;padding:6px 12px;letter-spacing:0.2em;text-transform:uppercase;max-width:100vw;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;flex-shrink:0;">&copy; Tacticon Studios 2026 &mdash; v0.0.5</p>
+<p style="font-size:11px;text-align:center;opacity:0.4;padding:6px 12px;letter-spacing:0.2em;text-transform:uppercase;max-width:100vw;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;flex-shrink:0;">&copy; Tacticon Studios 2026 &mdash; v0.0.7</p>
 
 </div>
 
@@ -594,17 +594,19 @@ function sfxClick() {
   document.addEventListener('pointerdown', _initAudio, true);
   document.addEventListener('keydown', _initAudio, true);
 
-  // Wire mute button after DOM ready
+  // Wire the Settings panel sound toggle (in-play mute button has been removed)
   function wireMuteBtn() {
-    const btn = document.getElementById('mute-btn');
+    const btn = document.getElementById('settings-mute-btn');
     if (!btn) return;
+    function refresh() {
+      btn.textContent = _muted ? 'Off' : 'On';
+      btn.style.opacity = _muted ? '0.55' : '1';
+    }
+    refresh();
     btn.addEventListener('click', function(e) {
       e.stopPropagation();
       _muted = !_muted;
-      btn.textContent = _muted ? 'M' : 'S';
-      btn.classList.toggle('muted', _muted);
-      btn.title = _muted ? 'Unmute sound' : 'Mute sound';
-      btn.setAttribute('aria-label', _muted ? 'Unmute sound' : 'Mute sound');
+      refresh();
       if (!_muted) sfxClick();
     });
   }
@@ -619,6 +621,8 @@ function sfxClick() {
 //  START MENU
 // ─────────────────────────────────────────────────────────────────
 const PATCH_NOTES = [
+  { v: 'v0.0.7', date: '2026-05-04', notes: ['Bomb ball mechanic added; sound toggle moved to Settings panel.'] },
+  { v: 'v0.0.6', date: '2026-05-04', notes: ['Version bump.'] },
   { v: 'v0.0.5', date: '2026-05-04', notes: ['Version bump.'] },
   { v: 'v0.0.4', date: '2026-05-03', notes: ['Row pressure progression slowed — interval step reduced from 90 ms to 50 ms per level, minimum raised from 300 ms to 500 ms.'] },
   {
@@ -768,7 +772,52 @@ function ballSpeed() { return Math.min(16, 7 + score / 140) * 60; }
 const PALETTE = ['#7700ee','#0033bb','#3399ff','#00eeff','#ffffff'];
 const PAL_GLOW= ['#84f',  '#04f',  '#3af',  '#0ef',  '#eef'];
 
-const W = COLS * DIAM + R + R;          // canvas width
+// ── BOMB BALL ──────────────────────────────────────────────────────
+// Special shooter-only ammo. ci = BOMB_CI marks a ball as a bomb.
+// On contact it destroys the cell it hits plus all 6 hex neighbours
+// regardless of colour, then orphan-detaches everything no longer
+// connected to the ceiling. Drops at BOMB_DROP_RATE per shooter ball.
+const BOMB_CI = -2;
+const BOMB_DROP_RATE = 0.04;  // ~1 in 25 shooter balls
+
+// Custom SVG (built from primitives — no emoji glyphs) loaded once
+const bombImg = new Image();
+bombImg.src = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">' +
+    '<defs>' +
+      '<radialGradient id="bg" cx="35%" cy="32%" r="62%">' +
+        '<stop offset="0%" stop-color="#666"/>' +
+        '<stop offset="55%" stop-color="#1a1a1a"/>' +
+        '<stop offset="100%" stop-color="#000"/>' +
+      '</radialGradient>' +
+      '<radialGradient id="sk" cx="50%" cy="50%" r="50%">' +
+        '<stop offset="0%" stop-color="#ffffff"/>' +
+        '<stop offset="35%" stop-color="#ffd83d"/>' +
+        '<stop offset="100%" stop-color="#ff6a00" stop-opacity="0"/>' +
+      '</radialGradient>' +
+    '</defs>' +
+    // body
+    '<circle cx="32" cy="38" r="22" fill="url(#bg)" stroke="#000" stroke-width="1"/>' +
+    // body highlight
+    '<ellipse cx="24" cy="30" rx="6" ry="4" fill="rgba(255,255,255,0.32)" transform="rotate(-30 24 30)"/>' +
+    // fuse cap
+    '<rect x="29" y="13" width="6" height="6" rx="1" fill="#2a2a2a" stroke="#000" stroke-width="0.5"/>' +
+    // fuse cord
+    '<path d="M 32 13 Q 39 6 44 3" stroke="#caa472" stroke-width="2" fill="none" stroke-linecap="round"/>' +
+    // spark glow halo
+    '<circle cx="44" cy="3" r="7" fill="url(#sk)"/>' +
+    // spark core
+    '<circle cx="44" cy="3" r="2" fill="#fff"/>' +
+  '</svg>'
+);
+
+// Canvas width: COLS balls each DIAM wide with R padding on each side (col 0
+// centre = R, col COLS-1 centre = COLS*DIAM - R). The previous formula added
+// an extra DIAM on the right, leaving a void where shots could fly past the
+// rightmost column without hitting anything — and pushing the right border
+// out of alignment with the playfield. (COLS-1)*DIAM + 2*R simplifies to
+// COLS*DIAM.
+const W = COLS * DIAM;                   // canvas width
 const H = 580;                           // canvas height
 const SHOOT_X = W / 2;
 const SHOOT_Y = H - 52;
@@ -873,6 +922,8 @@ function addRow() {
 }
 
 function randomCI() {
+  // Rare bomb drop in shooter ammo
+  if (Math.random() < BOMB_DROP_RATE) return BOMB_CI;
   const present = new Set();
   grid.forEach(row => row.forEach(ci => { if (ci >= 0) present.add(ci); }));
   const pool = present.size ? [...present] : PALETTE.map((_,i)=>i);
@@ -937,6 +988,50 @@ function popCells(cells, asFloaters = false) {
   });
 }
 
+// Bomb impact: destroy the hit cell + its 6 hex neighbours regardless of colour.
+function explodeAt(r, c) {
+  const blast = [[r, c], ...neighbors(r, c)].filter(([rr, cc]) => grid[rr] && grid[rr][cc] >= 0);
+  if (!blast.length) return;
+
+  // Heavier sfx + stronger shake than a normal pop
+  sfxPop(Math.max(4, blast.length));
+  shakeF = 250;
+
+  // Big white-spark burst at epicentre
+  const epi = bPos(r, c);
+  for (let i = 0; i < 26; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const spd   = (3 + Math.random() * 6) * 60;
+    particles.push({
+      x: epi.x, y: epi.y,
+      vx: Math.cos(angle) * spd,
+      vy: Math.sin(angle) * spd - 80,
+      ci: 4, // white index in PALETTE
+      life: 1.2,
+      size: 2 + Math.random() * 4,
+      rot: Math.random() * Math.PI,
+    });
+  }
+
+  popCells(blast, false);
+  ballsPopped += blast.length;
+  const pts = blast.length * 15 * level;  // higher per-ball than normal match
+  score += pts;
+  showCombo(blast.length, pts);
+
+  // Detach anything no longer anchored to the ceiling
+  const orphans = findOrphans();
+  if (orphans.length) {
+    score += orphans.length * 8 * level;
+    ballsPopped += orphans.length;
+    popCells(orphans, true);
+  }
+  updateHUD();
+  misses = 0;
+  checkDanger();
+  checkWin();
+}
+
 // ─────────────────────────────────────────────────────────────────
 //  PARTICLES
 // ─────────────────────────────────────────────────────────────────
@@ -962,6 +1057,32 @@ function spawnPop(x, y, ci) {
 // ─────────────────────────────────────────────────────────────────
 function snap() {
   if (!ball) return;
+
+  // Bomb path: find the nearest OCCUPIED cell to the impact point, blow it
+  // and its 6 hex neighbours, then drop any orphans. The bomb itself does
+  // not snap into the grid.
+  if (ball.ci === BOMB_CI) {
+    let br = -1, bc = -1, bd = Infinity;
+    for (let r = 0; r < grid.length; r++) {
+      for (let c = 0; c < colsInRow(r); c++) {
+        if (!grid[r] || grid[r][c] < 0) continue;
+        const p = bPos(r, c);
+        const d = Math.hypot(p.x - ball.x, p.y - ball.y);
+        if (d < bd) { bd = d; br = r; bc = c; }
+      }
+    }
+    ball = null;
+    if (br < 0) {
+      // Nothing in range to detonate against — count as a miss
+      misses++;
+      if (misses >= 3) { misses = 0; addRow(); }
+      checkDanger();
+      return;
+    }
+    explodeAt(br, bc);
+    return;
+  }
+
   // find nearest empty cell within 2*DIAM
   let bestR = -1, bestC = -1, bestD = Infinity;
   const maxR = Math.min(grid.length, Math.ceil((ball.y + DIAM * 2) / ROW_H));
@@ -1148,7 +1269,30 @@ function hex2rgb(hex) {
   return [(n>>16)&0xff, (n>>8)&0xff, n&0xff];
 }
 
+function drawBombBall(x, y, alpha = 1, radiusScale = 1) {
+  const rad = (R - 1) * radiusScale;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  // Orange ember glow so bombs read as "danger" against the cool blue field
+  ctx.shadowColor = '#ff8800';
+  ctx.shadowBlur  = 12 * radiusScale;
+  if (bombImg.complete && bombImg.naturalWidth) {
+    // SVG sized 64×64; viewBox keeps the body centred at (32,38) so we offset
+    // the draw rect upward so the bomb body sits centred on (x,y)
+    const size = rad * 2.4;
+    ctx.drawImage(bombImg, x - size / 2, y - size / 2 - rad * 0.18, size, size);
+  } else {
+    // Fallback while the SVG image is still decoding — plain dark sphere
+    ctx.beginPath();
+    ctx.arc(x, y, rad, 0, Math.PI * 2);
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
 function drawBubble(x, y, ci, alpha = 1, radiusScale = 1) {
+  if (ci === BOMB_CI) { drawBombBall(x, y, alpha, radiusScale); return; }
   const color = PALETTE[ci];
   const glow  = PAL_GLOW[ci];
   const [cr,cg,cb] = hex2rgb(color);
